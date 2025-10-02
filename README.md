@@ -42,6 +42,28 @@ any layer of your codebase.
   be finely tuned externally by adding custom interceptors without changing
   the core.
 
+## What other problems can this logger solve:
+
+For example, projects often have a separation between logger and analytics.
+And as a result, we see something like this in the code:
+
+```swift
+...
+    analyticsFacade.sendEvent(.someEvent) // send method to analytics
+    logger.log("Sent analytics with event .someEvent")
+...
+```
+
+So we end up additionally wrapping analytics with logs. Although in fact, these are very similar things.
+In this library, we can combine them. Simply extend the logger by adding a corresponding interceptor,
+which can be the same facade. Now the developer can save a lot of time by configuring the logger at the beginning.
+
+```swift
+    logger.analytics(.someEvent, ...)
+```
+
+And then the event goes both to analytics and to the console (if we want) and can be ignored by network loggers.
+
 ## Key entities
 
 - **`Letopis`** – the facade that creates events and fans them out to

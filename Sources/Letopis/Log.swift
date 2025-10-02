@@ -51,6 +51,13 @@ public final class Log {
     }
 
     @discardableResult
+    public func sencitive() -> Log {
+        // TODO: Strings will be replaced with "*" in payload
+        print("This method not implemented yet...")
+        return self
+    }
+
+    @discardableResult
     public func source(file: String = #file, function: String = #function, line: Int = #line) -> Log {
         let fileName = (file as NSString).lastPathComponent
         sourceInfo = SourceInfo(

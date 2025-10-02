@@ -24,6 +24,9 @@
 интерцепторов. Пакет не имеет внешних зависимостей, поэтому может использоваться
 на любом уровне вашего кода.
 
+А также вы можете использовать данную библиотеку как пример архитектуры для построения свои логгеров.
+Не обязательно завязываться именно на конкретную реализацию.
+
 ## Ключевые возможности
 
 - **Единая точка входа для логирования.** Один и тот же фасад отправляет события
@@ -41,6 +44,27 @@
 - **Адаптация к внешним условиям.** Логгер динамически подстраивается под
   состояние сети и другие ограничения среды, а поведение можно тонко
   настраивать извне, добавляя собственные интерцепторы без изменения ядра.
+
+## Какие еще проблемы можно решить данным логгером:
+
+Например, в проектах часто встречается разделение логера и аналитики.
+И в итоге мы в коде видим что-то на подобии
+```swift
+...
+    analyticsFacade.sendEvent(.someEvent) // отправляем метод в аналитику
+    logger.log("Отправили аналитику с событием .someEvent")
+...
+```
+
+И получается мы дополнительно аналитику обкладываем логами. Хотя по факту это очень похожие вещи.
+В данной библиотеке мы можем это объединить. Просто расширяем логгер, добавляя соответствующий интерцептор.
+Который может быть тем же фасадом. Только теперь разработчик может сократить много времени настроим логгер вначале.
+
+```swift
+    logger.analytics(.someEvent, ...)
+```
+
+И дальше событие уходит и в аналитику и в консоль (если захотим) и может быть проигнорированно сетевыми логерами.
 
 ## Ключевые сущности
 
@@ -60,10 +84,12 @@
 
 ## Быстрый старт
 
+
 ```swift
 import Letopis
 
 // Определите собственные типы событий
+// Подпишите enum под протокол.
 enum AppEventType: String, EventTypeProtocol {
     case userAction = "user_action"
     case apiCall = "api_call"
@@ -71,6 +97,7 @@ enum AppEventType: String, EventTypeProtocol {
     case system = "system"
 }
 
+// А также действия. Это тоже enum подписанн под соответствующий протокол.
 enum AppEventAction: String, EventActionProtocol {
     case view = "view"
     case fetch = "fetch"
@@ -81,8 +108,12 @@ enum AppEventAction: String, EventActionProtocol {
 private let logger = Letopis(
     interceptors: [
         ConsoleInterceptor(
+            // Можно указать события которые мы хотим явно прослушивать.
+            // Иначе будем обрабатывать все.
             logTypes: [.info, .error],
+            // С типами тоже самое
             eventTypes: ["user_action", "api_call", "error"],
+            // И со свойствами тоже.
             priorities: [.default, .critical]
         )
     ]
@@ -93,7 +124,7 @@ logger
     .event(AppEventType.userAction)
     .action(AppEventAction.view)
     .payload(["user_id": "12345", "screen": "profile"])
-    .source()
+    .source() // Можно добавить строку откуда вызыван код (для дебага удобно)
     .info("Пользователь открыл экран профиля")
 
 // Логирование API вызовов
@@ -101,7 +132,6 @@ logger
     .event(AppEventType.apiCall)
     .action(AppEventAction.fetch)
     .payload(["endpoint": "/api/users/12345", "method": "GET"])
-    .source()
     .info("Загрузка данных пользователя")
 
 // Логирование ошибок с критическим приоритетом
@@ -110,7 +140,6 @@ logger
     .action(AppEventAction.networkFailure)
     .priority(.critical)
     .payload(["error_code": "500", "retry_count": "3"])
-    .source()
     .error("Не удалось загрузить данные пользователя")
 
 // Это debug событие будет отфильтровано
@@ -306,13 +335,13 @@ final class AnalyticsInterceptor: LetopisInterceptor {
         // Отправляем только события аналитики и пользовательских действий
         guard let eventType = logEvent.payload["event_type"],
               ["analytics", "user_action"].contains(eventType) else { return }
-        
+
         let analyticsEvent = AnalyticsEvent(
             name: logEvent.message,
             properties: logEvent.payload,
             timestamp: logEvent.timestamp
         )
-        
+
         analyticsService.track(analyticsEvent)
     }
 }
