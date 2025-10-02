@@ -1,0 +1,127 @@
+# Quick Start
+
+This guide will help you get started with Letopis in just a few minutes.
+
+## Import the library
+
+```swift
+import Letopis
+```
+
+## Define event types
+
+Create your own event types and actions by conforming enums to the corresponding protocols:
+
+```swift
+// Event types
+enum AppEventType: String, EventTypeProtocol {
+    case userAction = "user_action"
+    case apiCall = "api_call"
+    case error = "error"
+    case system = "system"
+}
+
+// Actions
+enum AppEventAction: String, EventActionProtocol {
+    case view = "view"
+    case fetch = "fetch"
+    case networkFailure = "network_failure"
+}
+```
+
+## Initialize the logger
+
+Setup the logger with a console interceptor for development:
+
+```swift
+private let logger = Letopis(
+    interceptors: [
+        ConsoleInterceptor(
+            // You can specify which events you want to explicitly listen to
+            // Otherwise, all events will be processed
+            logTypes: [.info, .error],
+            eventTypes: ["user_action", "api_call", "error"],
+            priorities: [.default, .critical]
+        )
+    ]
+)
+```
+
+## Usage examples
+
+### Logging user interactions
+
+```swift
+logger
+    .event(AppEventType.userAction)
+    .action(AppEventAction.view)
+    .payload(["user_id": "12345", "screen": "profile"])
+    .source() // Adds file and line information
+    .info("User opened profile screen")
+```
+
+### Logging API calls
+
+```swift
+logger
+    .event(AppEventType.apiCall)
+    .action(AppEventAction.fetch)
+    .payload(["endpoint": "/api/users/12345", "method": "GET"])
+    .info("Fetching user data")
+```
+
+### Logging errors with critical priority
+
+```swift
+logger
+    .event(AppEventType.error)
+    .action(AppEventAction.networkFailure)
+    .priority(.critical)
+    .payload(["error_code": "500", "retry_count": "3"])
+    .error("Failed to load user data")
+```
+
+### Debug messages
+
+```swift
+logger
+    .event(AppEventType.system)
+    .debug("Internal cache updated")
+```
+
+**Note:** In this example, the console interceptor only shows info and error messages related to user actions, API calls, and errors. Debug messages and other event types are filtered out.
+
+## Direct calls
+
+If the builder is overkill, you can use direct methods:
+
+```swift
+// Log successful purchase
+logger.info(
+    "Purchase completed successfully",
+    priority: .critical,
+    payload: ["product_id": "premium_plan", "amount": "9.99"],
+    eventType: .analytics,
+    eventAction: .purchase
+)
+
+// Log error
+logger.error(
+    "Network request failed",
+    priority: .critical,
+    payload: ["url": "https://api.example.com/data", "status_code": "404"],
+    eventType: .error,
+    eventAction: .networkFailure
+)
+```
+
+## Next steps
+
+- Explore the library's [key features](features.md)
+- Learn more about the [architecture](architecture.md)
+- Study [advanced examples](examples/basic.md)
+- Get familiar with [interceptors](advanced/interceptors.md)
+
+---
+
+[Back to main README](../../README.md) | [Installation](installation.md)
