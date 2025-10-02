@@ -86,6 +86,11 @@ public final class Log {
         return createAndSendEvent(message: message, type: .debug)
     }
 
+    @discardableResult
+    public func analytics(_ message: String) -> LogEvent {
+        return createAndSendEvent(message: message, type: .analytics)
+    }
+
     private func createAndSendEvent(message: String, type: LogEventType) -> LogEvent {
         let event = logger.createLogEvent(
             message,

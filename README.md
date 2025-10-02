@@ -134,7 +134,7 @@ event types are filtered out.
 - `source(file:function:line:)` – records call-site information in the payload.
   By default it uses `#file`, `#function`, and `#line` and stores them under the
   `source_file`, `source_function`, and `source_line` keys.
-- `info(_:)`, `warning(_:)`, `error(_:)`, `debug(_:)` – set the event type,
+- `info(_:)`, `warning(_:)`, `error(_:)`, `debug(_:)`, `analytics(_:)` – set the event type,
   message, and immediately create and send the `LogEvent` to all interceptors.
   Errors can be passed directly through `error(_ error: Error, ...)`.
 
@@ -165,7 +165,7 @@ logger.error(
 )
 ```
 
-Equivalent overloads exist for `warning`, `debug`, and both versions of
+Equivalent overloads exist for `warning`, `debug`, `analytics`, and both versions of
 `error` (accepting `String` or `Error`). Every method accepts optional
 `payload`, `eventType`, and `eventAction` arguments that are merged into the
 final payload.
@@ -363,7 +363,7 @@ let devLogger = Letopis(
 #endif
 ```
 
-Calling any logging method (`info()`, `warning()`, `error()`, `debug()`) creates
+Calling any logging method (`info()`, `warning()`, `error()`, `debug()`, `analytics()`) creates
 an event that is forwarded to each interceptor in turn, so adding a new delivery
 channel does not require touching existing ones.
 

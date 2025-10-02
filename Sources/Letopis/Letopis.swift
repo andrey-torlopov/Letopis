@@ -246,6 +246,30 @@ public final class Letopis: @unchecked Sendable {
         )
     }
 
+    /// Creates an analytics log event intended for analytics services.
+    /// - Parameters:
+    ///   - message: Descriptive message to log.
+    ///   - priority: Priority of the event. Defaults to ``LogPriority/default``.
+    ///   - payload: Additional metadata for the event.
+    ///   - eventType: Optional high-level classification of the event.
+    ///   - eventAction: Optional action performed during the event.
+    /// - Returns: Created ``LogEvent`` instance.
+    @discardableResult
+    public func analytics(
+        _ message: String,
+        priority: LogPriority = .default,
+        payload: [String: String]? = nil,
+        eventType: (any EventTypeProtocol)? = nil,
+        eventAction: (any EventActionProtocol)? = nil
+    ) -> LogEvent {
+        createLogEvent(
+            message,
+            type: .analytics,
+            priority: priority,
+            payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
+        )
+    }
+
     /// Returns the current health status of all interceptors.
     /// - Returns: Array of tuples containing interceptor type and health state.
     public func getInterceptorHealthStatus() -> [(type: String, state: InterceptorHealthState, canHandle: Bool)] {
