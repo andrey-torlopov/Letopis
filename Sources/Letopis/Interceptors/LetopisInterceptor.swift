@@ -2,6 +2,9 @@ import Foundation
 
 /// Describes an entity that is able to handle log events produced by ``Letopis``.
 public protocol LetopisInterceptor {
+    /// Name of the interceptor for identification purposes
+    var name: String { get }
+
     /// Called when a log event is emitted by ``Letopis``.
     /// - Parameter logEvent: Event that should be handled.
     /// - Throws: An error if the interceptor fails to handle the event.

@@ -2,6 +2,8 @@ import Foundation
 
 /// Example interceptor that can fail (simulating network issues) to demonstrate health checking.
 public final class NetworkInterceptorExample: LetopisInterceptor {
+    public var name: String { "NetworkInterceptorExample" }
+
     private var isNetworkAvailable: Bool = true
     private var simulateFailure: Bool = false
     private let endpoint: String

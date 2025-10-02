@@ -37,6 +37,8 @@ import Foundation
     actor SpyInterceptor: LetopisInterceptor {
         var handledEvents: [LogEvent] = []
 
+        nonisolated var name: String { "SpyInterceptor" }
+
         func handle(_ logEvent: LogEvent) async throws {
             handledEvents.append(logEvent)
         }

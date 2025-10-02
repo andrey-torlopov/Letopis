@@ -53,6 +53,8 @@ struct NetworkLogModel {
 /// Thread-safe network interceptor using Swift Actor
 /// Demonstrates proper handling of network conditions and caching
 actor LogNetworkInterceptor: LetopisInterceptor {
+    let name: String = "LogNetworkInterceptor"
+    
     typealias NetworkProcessor = @Sendable (NetworkLogModel) -> Bool
 
     private var monitor: NetworkMonitor

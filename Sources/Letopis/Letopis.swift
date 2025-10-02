@@ -5,19 +5,26 @@ public final class Letopis: @unchecked Sendable {
     private var healthTrackers: [InterceptorHealthTracker] = []
     private var recoveryTimer: Timer?
 
+    /// Global list of sensitive keys that should be masked in all logs
+    public private(set) var sensitiveKeys: Set<String> = []
+
     /// Creates a new instance of ``Letopis``.
     /// - Parameters:
     ///   - interceptors: Initial list of interceptors that will handle log events.
     ///   - healthCheckInterval: Interval in seconds between health checks for failed interceptors. Defaults to 30.0 seconds. Set to 0 to disable automatic health checks.
-    public init(interceptors: [LetopisInterceptor] = [], healthCheckInterval: TimeInterval = 30.0) {
+    ///   - sensitiveKeys: Global list of keys that should be masked in all log payloads.
+    public init(interceptors: [LetopisInterceptor] = [], healthCheckInterval: TimeInterval = 30.0, sensitiveKeys: [String] = []) {
         self.healthTrackers = interceptors.map { InterceptorHealthTracker(interceptor: $0) }
         self.recoveryTimer = nil
+        self.sensitiveKeys = Set(sensitiveKeys)
 
         // Start recovery timer after initialization if interval > 0
         if healthCheckInterval > 0 {
-            self.recoveryTimer = Timer.scheduledTimer(withTimeInterval: healthCheckInterval, repeats: true) { [weak self] _ in
+            let timer = Timer.scheduledTimer(withTimeInterval: healthCheckInterval, repeats: true) { [weak self] _ in
                 self?.performHealthChecks()
             }
+            self.recoveryTimer = timer
+            RunLoop.current.add(timer, forMode: .common)
         }
     }
 
@@ -274,8 +281,7 @@ public final class Letopis: @unchecked Sendable {
     /// - Returns: Array of tuples containing interceptor type and health state.
     public func getInterceptorHealthStatus() -> [(type: String, state: InterceptorHealthState, canHandle: Bool)] {
         return healthTrackers.map { tracker in
-            let typeName = String(describing: type(of: tracker.interceptor))
-            return (type: typeName, state: tracker.state, canHandle: tracker.canHandleEvents)
+            return (type: tracker.interceptor.name, state: tracker.state, canHandle: tracker.canHandleEvents)
         }
     }
 
@@ -292,5 +298,17 @@ public final class Letopis: @unchecked Sendable {
     /// Manually triggers health checks for all interceptors.
     public func triggerHealthChecks() {
         performHealthChecks()
+    }
+
+    /// Adds sensitive keys to the global list
+    /// - Parameter keys: Keys to add to the sensitive keys list
+    public func addSensitiveKeys(_ keys: [String]) {
+        sensitiveKeys.formUnion(keys)
+    }
+
+    /// Removes sensitive keys from the global list
+    /// - Parameter keys: Keys to remove from the sensitive keys list
+    public func removeSensitiveKeys(_ keys: [String]) {
+        sensitiveKeys.subtract(keys)
     }
 }

@@ -79,6 +79,39 @@ And then the event goes both to analytics and to the console (if we want) and ca
 - **`LetopisInterceptor`** – a protocol for handlers that decide what to do
   with events (send them to the network, persist them, filter them, and so on).
 
+## Installation
+
+### Swift Package Manager
+
+Add Letopis to your Xcode project:
+
+1. In Xcode, open your project and navigate to **File → Add Package Dependencies...**
+2. Enter the repository URL:
+   ```
+   https://github.com/yourusername/Letopis.git
+   ```
+3. Select the version rule (recommended: "Up to Next Major Version")
+4. Click **Add Package**
+
+Alternatively, add it to your `Package.swift` dependencies:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/yourusername/Letopis.git", from: "1.0.0")
+]
+```
+
+Then add it to your target:
+
+```swift
+targets: [
+    .target(
+        name: "YourTarget",
+        dependencies: ["Letopis"]
+    )
+]
+```
+
 ## Quick start
 
 ```swift
@@ -162,6 +195,80 @@ event types are filtered out.
 
 For concise code, you can start a builder from the facade via helper methods
 such as `skryzhal.event(...)` or `skryzhal.action(...)`.
+
+### Sensitive data masking
+
+Letopis provides built-in support for masking sensitive information in log payloads to prevent accidental exposure of passwords, tokens, API keys, and other confidential data.
+
+#### Masking strategies
+
+Four masking strategies are available via `SensitiveDataStrategy`:
+
+- **`.full`** – Replaces the entire value with `***`  
+  Example: `"secret123"` → `"***"`
+
+- **`.partial`** – Keeps first and last character, masks the rest  
+  Example: `"secret123"` → `"s***3"`
+
+- **`.email`** – Masks the username part of an email  
+  Example: `"user@example.com"` → `"u***@example.com"`
+
+- **`.last4`** – Shows only the last 4 characters (useful for card numbers)  
+  Example: `"1234567890123456"` → `"***3456"`
+
+#### Global sensitive keys
+
+Configure sensitive keys globally when creating the logger:
+
+```swift
+let logger = Letopis(
+    interceptors: [ConsoleInterceptor()],
+    sensitiveKeys: ["password", "token", "api_key", "ssn"]
+)
+
+// Add more keys dynamically
+logger.addSensitiveKeys(["credit_card", "secret"])
+
+// Remove keys if needed
+logger.removeSensitiveKeys(["api_key"])
+```
+
+Global keys use the `.partial` strategy by default when masking is enabled.
+
+#### Per-log masking
+
+Enable masking for specific logs using the fluent API:
+
+```swift
+// Use global sensitive keys
+logger.log()
+    .payload(["password": "secret123", "username": "john"])
+    .sensitive()  // Masks "password" using global list
+    .info("User logged in")
+// Output: password=s***3, username=john
+
+// Mask specific keys with custom strategies
+logger.log()
+    .payload(["email": "user@example.com", "card": "1234567890123456"])
+    .sensitive(key: "email", strategy: .email)
+    .sensitive(key: "card", strategy: .last4)
+    .info("Payment processed")
+// Output: email=u***@example.com, card=***3456
+
+// Mask multiple keys with the same strategy
+logger.log()
+    .payload(["token": "abc123", "refresh_token": "xyz789"])
+    .sensitive(keys: ["token", "refresh_token"], strategy: .full)
+    .info("Auth completed")
+// Output: token=***, refresh_token=***
+```
+
+#### Important notes
+
+- Masking only applies when `.sensitive()` is called on the log chain
+- Custom key strategies take precedence over global sensitive keys
+- Masking happens before the event reaches interceptors
+- Source metadata (`source_file`, `source_function`, etc.) is never masked
 
 ### Direct calls
 
