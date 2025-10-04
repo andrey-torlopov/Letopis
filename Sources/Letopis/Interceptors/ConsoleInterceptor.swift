@@ -115,8 +115,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     /// - Returns: Human readable representation of the event.
     private func format(_ event: LogEvent) -> String {
         var parts: [String] = []
-        parts.append("\(event.type.rawValue) \(event.message)")
-        parts.append("(priority: \(event.priority.rawValue))")
+        parts.append("\(event.type.rawValue) \(event.priority.icon) \(event.message)")
 
         if !event.payload.isEmpty {
             let payloadDescription = event.payload
