@@ -10,7 +10,7 @@ public enum LogPriority: String, Codable, Sendable{
     /// Visual icon representing the priority level.
     public var icon: String {
         switch self {
-        case .default: return "⚪️"
+        case .default: return ""
         case .critical: return "🚩"
         }
     }
