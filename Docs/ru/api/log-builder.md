@@ -1,4 +1,4 @@
-Строитель `Log` предоставляет текучий интерфейс для построения событий логирования.
+Билдер `Log` предоставляет fluent интерфейс для построения событий логирования.
 
 ## Методы
 
@@ -33,14 +33,15 @@ logger
     .info("Запрос API начат")
 ```
 
-### `priority(_:)`
+### `critical()`
 
-Изменяет приоритет доставки (`.default` или `.critical`).
+Помечает событие как критичное, требующее немедленного внимания.
 
 ```swift
 logger
-    .priority(.critical)
-    .error("Произошла критическая ошибка")
+    .event(.payment)
+    .critical()
+    .error("Сбой обработки платежа")
 ```
 
 ### `source(file:function:line:)`
@@ -51,6 +52,17 @@ logger
 logger
     .source()
     .info("Отладочная информация с местоположением источника")
+```
+
+### `sensitive()` / `sensitive(keys:strategy:)`
+
+Включает маскировку чувствительных данных в полезной нагрузке.
+
+```swift
+logger
+    .payload(["email": "user@example.com", "card": "1234-5678"])
+    .sensitive(keys: ["email", "card"])
+    .info("Платеж обработан")
 ```
 
 ### Терминальные методы
@@ -66,9 +78,36 @@ logger
 ```swift
 logger.event(.userAction).info("Пользователь вошел в систему")
 logger.event(.system).warning("Мало памяти")
-logger.event(.error).error("Сбой сети")
+logger.event(.error).critical().error("Сбой сети")
 logger.event(.debug).debug("Кеш обновлен")
 logger.event(.analytics).analytics("Покупка завершена")
+```
+
+## Примеры использования
+
+```swift
+// Простой лог
+logger.log().info("Приложение запущено")
+
+// С типом события и действием
+logger
+    .event("user_action")
+    .action("button_tap")
+    .info("Пользователь нажал кнопку оформления заказа")
+
+// Критичная ошибка с информацией об источнике
+logger
+    .event("payment")
+    .source()
+    .critical()
+    .error("Таймаут платежного шлюза")
+
+// Аналитика с данными
+logger
+    .event("purchase")
+    .action("completed")
+    .payload(["amount": "99.99", "currency": "USD"])
+    .analytics("Покупка успешна")
 ```
 
 ---

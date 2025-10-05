@@ -59,7 +59,7 @@ final class HealthCheckTests: XCTestCase {
             do {
                 try await networkInterceptor.handle(LogEvent(
                     type: .info,
-                    priority: .default,
+                    isCritical: false,
                     message: "Test message \(i)",
                     payload: [:]
                 ))

@@ -11,7 +11,7 @@ import Foundation
 
     let event = logger.info(
         "Test message",
-        priority: .critical,
+        isCritical: true,
         payload: payload,
         eventType: TestEvent.someEvent,
         eventAction: TestAction.open
@@ -19,7 +19,7 @@ import Foundation
 
     #expect(event.message == "Test message")
     #expect(event.type == LogEventType.info)
-    #expect(event.priority == LogPriority.critical)
+    #expect(event.isCritical == true)
     #expect(event.payload["Key"] == "Value")
     #expect(event.payload["event_type"] == TestEvent.someEvent.rawValue)
     #expect(event.payload["event_action"] == TestAction.open.rawValue)
@@ -97,7 +97,7 @@ import Foundation
 
     let consoleInterceptor = ConsoleInterceptor(
         logTypes: [.error],
-        priorities: [.critical],
+        criticalOnly: true,
         eventTypes: ["error"],
         actions: ["view"],
         sourceFiles: ["TestFile.swift"],
@@ -119,9 +119,9 @@ import Foundation
         "source_file": "TestFile.swift"
     ]
 
-    logger.error("Visible error", priority: .critical, payload: visiblePayload)
-    logger.error("Hidden by action", priority: .critical, payload: hiddenByActionPayload)
-    logger.info("Hidden by log type", priority: .critical, payload: visiblePayload)
+    logger.error("Visible error", isCritical: true, payload: visiblePayload)
+    logger.error("Hidden by action", isCritical: true, payload: hiddenByActionPayload)
+    logger.info("Hidden by log type", isCritical: true, payload: visiblePayload)
 
     // Ждем завершения асинхронных операций
     try await Task.sleep(nanoseconds: 100_000_000) // 0.1 секунда

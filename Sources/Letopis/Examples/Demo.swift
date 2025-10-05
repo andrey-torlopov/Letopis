@@ -43,7 +43,7 @@ struct NetworkLogModel {
     let id: UUID
     let timestamp: Date
     let text: String
-    let priority: LogPriority
+    let isCritical: Bool
     let eventType: String
     let action: String
 }
@@ -54,7 +54,7 @@ struct NetworkLogModel {
 /// Demonstrates proper handling of network conditions and caching
 actor LogNetworkInterceptor: LetopisInterceptor {
     let name: String = "LogNetworkInterceptor"
-    
+
     typealias NetworkProcessor = @Sendable (NetworkLogModel) -> Bool
 
     private var monitor: NetworkMonitor
@@ -86,7 +86,7 @@ actor LogNetworkInterceptor: LetopisInterceptor {
             id: UUID(),
             timestamp: logEvent.timestamp,
             text: logEvent.message,
-            priority: logEvent.priority,
+            isCritical: logEvent.isCritical,
             eventType: "network_log",
             action: "process"
         )
@@ -134,9 +134,9 @@ actor LogNetworkInterceptor: LetopisInterceptor {
         }
     }
 
-    /// Handles poor connectivity - selective sending based on priority
+    /// Handles poor connectivity - selective sending based on criticality
     private func processPoorConnectivityState(model: NetworkLogModel) async {
-        if model.priority != .critical {
+        if !model.isCritical {
             cache.append(model)
             print("📶 [POOR] Non-critical log cached: \(model.text)")
         } else {
@@ -166,7 +166,7 @@ struct NetworkScenarioDemo {
     /// Simulates a server that randomly succeeds or fails
     static func createNetworkProcessor() -> @Sendable (NetworkLogModel) -> Bool {
         return { @Sendable model in
-            print("🔄 Attempting to send: \(model.text) [Priority: \(model.priority)]")
+            print("🔄 Attempting to send: \(model.text) [Critical: \(model.isCritical)]")
 
             // Simulate network delay
             Thread.sleep(forTimeInterval: 0.1)
@@ -187,19 +187,23 @@ struct NetworkScenarioDemo {
     /// Creates mixed priority logs for testing
     static func generateTestLogs(logger: Letopis) {
         print("\n🚀 Starting network interceptor demonstration...")
-        print("📋 Generating logs with different priorities to test network handling\n")
+        print("📋 Generating logs with different criticality levels to test network handling\n")
 
         // Generate a mix of critical and normal logs
         for i in 1...15 {
-            let priority: LogPriority = (i % 4 == 0) ? .critical : .critical
+            let isCritical: Bool = (i % 4 == 0)
             let eventType: AppEventType = (i % 3 == 0) ? .networkEvent : .uiAction
             let action: ScreenAction = (i % 5 == 0) ? .error : .open
 
-            logger
+            var log = logger
                 .event(eventType)
                 .action(action)
-                .priority(priority)
-                .info("Demo log message #\(i)")
+
+            if isCritical {
+                log = log.critical()
+            }
+
+            log.info("Demo log message #\(i)")
         }
     }
 }

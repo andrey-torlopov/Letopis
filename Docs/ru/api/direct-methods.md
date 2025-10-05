@@ -1,41 +1,42 @@
-Если строитель избыточен, можно вызывать фасадные методы напрямую.
+Если билдер избыточен, используйте прямые методы фасада.
 
 ## Доступные методы
 
-Все методы принимают необязательные аргументы `payload`, `eventType` и `eventAction`, которые объединяются в финальную полезную нагрузку.
+Все методы принимают необязательные аргументы `isCritical`, `payload`, `eventType` и `eventAction`, которые объединяются в финальную полезную нагрузку.
 
-### `info(_:priority:payload:eventType:eventAction:)`
+### `info(_:isCritical:payload:eventType:eventAction:)`
 
 Логирование информационных сообщений:
 
 ```swift
 logger.info(
     "Покупка успешно завершена",
-    priority: .critical,
+    isCritical: false,
     payload: ["product_id": "premium_plan", "amount": "9.99", "currency": "USD"],
     eventType: .analytics,
     eventAction: .purchase)
 ```
 
-### `warning(_:priority:payload:eventType:eventAction:)`
+### `warning(_:isCritical:payload:eventType:eventAction:)`
 
 Логирование предупреждений:
 
 ```swift
 logger.warning(
     "Приближение к лимиту API",
+    isCritical: true,
     payload: ["remaining_requests": "10", "reset_time": "60s"])
 ```
 
-### `error(_:priority:payload:eventType:eventAction:)`
+### `error(_:isCritical:payload:eventType:eventAction:)`
 
-Логирование сообщений об ошибках или объектов Error:
+Логирование сообщений об ошибках или объектов Error (по умолчанию `isCritical: true`):
 
 ```swift
 // Со строкой
 logger.error(
     "Сбой сетевого запроса",
-    priority: .critical,
+    isCritical: true,
     payload: ["url": "https://api.example.com/data", "status_code": "404"],
     eventType: .error,
     eventAction: .networkFailure)
@@ -44,11 +45,11 @@ logger.error(
 do {
     try riskyOperation()
 } catch {
-    logger.error(error, priority: .critical)
+    logger.error(error, isCritical: true)
 }
 ```
 
-### `debug(_:priority:payload:eventType:eventAction:)`
+### `debug(_:isCritical:payload:eventType:eventAction:)`
 
 Логирование отладочной информации:
 
@@ -58,7 +59,7 @@ logger.debug(
     payload: ["entries": "150", "size": "2.5MB"])
 ```
 
-### `analytics(_:priority:payload:eventType:eventAction:)`
+### `analytics(_:isCritical:payload:eventType:eventAction:)`
 
 Логирование событий аналитики:
 
@@ -69,12 +70,35 @@ logger.analytics(
     eventType: .analytics)
 ```
 
+## Методы быстрого доступа
+
+Для быстрого логирования без создания пользовательских типов событий:
+
+```swift
+// Простой лог с уровнем
+logger.log("Приложение запущено", level: .info)
+
+// С критичностью
+logger.log("Сбой платежа", level: .error, isCritical: true)
+
+// С событием и действием
+logger.log(
+    "Действие пользователя", 
+    level: .info, 
+    event: "button_tap", 
+    action: "checkout"
+)
+
+// Логирование ошибки
+logger.log(networkError, isCritical: true, event: "network")
+```
+
 ## Когда использовать прямые методы
 
 Прямые методы полезны, когда:
 
 - Вам нужно быстро залогировать простое сообщение
-- Вам не нужна гибкость строителя
+- Вам не нужна гибкость билдера
 - Вы мигрируете с другой системы логирования
 - Критична производительность (немного меньше накладных расходов)
 

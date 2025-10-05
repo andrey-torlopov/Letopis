@@ -1,3 +1,5 @@
+import Foundation
+
 /// Represents a single log event emitted by ``Letopis``.
 public struct LogEvent: Codable, Sendable {
     /// Unique identifier of the event instance.

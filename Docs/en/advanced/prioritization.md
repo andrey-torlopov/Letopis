@@ -1,32 +1,50 @@
-# Event Prioritization
+## Event Criticality
 
-## Priority Levels
+Events can be marked as critical using the `isCritical` flag to indicate they require immediate attention.
 
-`LogPriority` defines two levels:
+### Non-Critical Events (Default)
 
-### `.default`
 Regular events that can be buffered or sent in batches.
 
 ```swift
-logger.priority(.default).info("User scrolled to bottom")
+logger.log()
+    .event("user_action")
+    .info("User scrolled to bottom")
+// isCritical = false by default
 ```
 
-### `.critical`
+### Critical Events
+
 Events that require immediate handling (failures, critical analytics).
 
 ```swift
-logger.priority(.critical).error("Payment processing failed")
+logger.log()
+    .event("payment")
+    .critical()
+    .error("Payment processing failed")
+// isCritical = true
+```
+
+Or using convenience methods:
+
+```swift
+// Error methods default to critical
+logger.error("Payment failed", isCritical: true)
+
+// Other methods default to non-critical
+logger.info("User action", isCritical: false)
 ```
 
 ## Interceptor-Specific Interpretation
 
-Each interceptor can interpret priorities differently:
+Each interceptor can interpret criticality differently:
 
 ### Network Interceptor Example
+
 ```swift
 final class NetworkInterceptor: LetopisInterceptor {
     func handle(_ logEvent: LogEvent) {
-        if logEvent.priority == .critical {
+        if logEvent.isCritical {
             // Send immediately
             sendImmediately(logEvent)
         } else {
@@ -38,6 +56,7 @@ final class NetworkInterceptor: LetopisInterceptor {
 ```
 
 ### Disk Interceptor Example
+
 ```swift
 final class DiskInterceptor: LetopisInterceptor {
     func handle(_ logEvent: LogEvent) {
@@ -45,7 +64,7 @@ final class DiskInterceptor: LetopisInterceptor {
         saveToDisk(logEvent)
         
         // Trigger sync only for critical events
-        if logEvent.priority == .critical {
+        if logEvent.isCritical {
             triggerBackgroundSync()
         }
     }
@@ -53,29 +72,50 @@ final class DiskInterceptor: LetopisInterceptor {
 ```
 
 ### Console Interceptor Example
+
 ```swift
 let consoleInterceptor = ConsoleInterceptor(
-    priorities: [.critical] // Only print critical messages
+    criticalOnly: true  // Only print critical events
 )
 ```
 
+## OSLog Integration
+
+When using `ConsoleInterceptor` with OSLog, criticality affects the log level:
+
+```swift
+let consoleInterceptor = ConsoleInterceptor(
+    useOSLog: true,
+    subsystem: "com.yourapp.identifier",
+    category: "Analytics"
+)
+```
+
+**Log level mapping:**
+- `.debug` → `.debug`
+- `.info` → `.info`  
+- `.warning` → `.default` (or `.error` if critical)
+- `.error` → `.error` (or `.fault` if critical)
+
+Critical events get elevated to higher OSLog levels for better visibility.
+
 ## Best Practices
 
-1. **Use `.default` for most logs**: Reserve `.critical` for truly important events
-2. **Define clear criteria**: Document when to use each priority level
-3. **Test priority handling**: Verify interceptors behave correctly for each level
+1. **Use non-critical for most logs**: Reserve critical flag for truly important events
+2. **Define clear criteria**: Document when to mark events as critical
+3. **Test criticality handling**: Verify interceptors behave correctly
 4. **Consider user impact**: Critical events should be worth the performance cost
 
 ## Common Use Cases
 
-### Critical Priority
+### Critical Events
 - Payment failures
 - Security breaches
 - Data corruption
 - Service outages
 - Fatal errors
 
-### Default Priority
+### Non-Critical Events
 - User interactions
 - API calls
 - Debug information

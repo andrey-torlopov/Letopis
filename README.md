@@ -60,10 +60,10 @@ logger
 ## Usage Examples
 
 ```swift
-// Logging with priority
+// Logging critical events
 logger
     .event(.apiCall)
-    .priority(.critical)
+    .critical()
     .error("Network request failed")
 
 // Masking sensitive data
