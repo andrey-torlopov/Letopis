@@ -118,11 +118,29 @@ public final class ConsoleInterceptor: LetopisInterceptor {
         parts.append("\(event.type.rawValue) \(event.priority.icon) \(event.message)")
 
         if !event.payload.isEmpty {
-            let payloadDescription = event.payload
-                .sorted { $0.key < $1.key }
-                .map { "\($0.key)=\($0.value)" }
-                .joined(separator: ", ")
-            parts.append("[\(payloadDescription)]")
+            // Extract source information
+            let sourceFile = event.payload["source_file"]
+            let sourceFunction = event.payload["source_function"]
+            let sourceLine = event.payload["source_line"]
+
+            // Filter out source keys from payload
+            let filteredPayload = event.payload.filter {
+                $0.key != "source_file" && $0.key != "source_function" && $0.key != "source_line"
+            }
+
+            // Add source info if present
+            if let file = sourceFile, let function = sourceFunction, let line = sourceLine {
+                parts.append("[source: \(file) :: \(function) :: \(line)]")
+            }
+
+            // Add remaining payload if any
+            if !filteredPayload.isEmpty {
+                let payloadDescription = filteredPayload
+                    .sorted { $0.key < $1.key }
+                    .map { "\($0.key)=\($0.value)" }
+                    .joined(separator: ", ")
+                parts.append("[\(payloadDescription)]")
+            }
         }
 
         return parts.joined(separator: " ")
