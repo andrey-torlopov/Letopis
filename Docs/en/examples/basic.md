@@ -67,7 +67,7 @@ logger
 logger
     .event(AppEventType.apiCall)
     .action(AppEventAction.fetch)
-    .priority(.critical)
+    .critical()
     .payload([
         "endpoint": "/api/users/12345",
         "method": "GET",
@@ -85,7 +85,7 @@ do {
 } catch {
     logger
         .event(AppEventType.error)
-        .priority(.critical)
+        .critical()
         .error(error)
 }
 ```
@@ -98,18 +98,18 @@ let logger = Letopis(
         ConsoleInterceptor(
             logTypes: [.info, .error], // Only info and error
             eventTypes: ["user_action", "api_call"], // Only these types
-            priorities: [.critical] // Only critical priority
+            criticalOnly: true // Only critical events
         )
     ]
 )
 
 // This will be logged
-logger.event("user_action").priority(.critical).info("Login")
+logger.event("user_action").critical().info("Login")
 
 // This will be filtered out (debug type)
 logger.event("system").debug("Cache updated")
 
-// This will be filtered out (default priority)
+// This will be filtered out (non-critical)
 logger.event("user_action").info("Button clicked")
 ```
 

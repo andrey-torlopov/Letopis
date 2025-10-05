@@ -13,7 +13,7 @@ A DTO that contains:
 - Identifier
 - Timestamp
 - Log type (`LogEventType`)
-- Priority (`LogPriority`)
+- Criticality flag (`isCritical: Bool`)
 - Message
 - Additional `payload` dictionary
 

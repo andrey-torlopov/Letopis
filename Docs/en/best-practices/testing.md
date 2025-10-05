@@ -66,9 +66,9 @@ func testPriorityHandling() {
     let spy = SpyInterceptor()
     let logger = Letopis(interceptors: [spy])
     
-    logger.priority(.critical).error("Critical error")
+    logger.critical().error("Critical error")
     
-    XCTAssertEqual(spy.receivedEvents.first?.priority, .critical)
+    XCTAssertEqual(spy.receivedEvents.first?.isCritical, true)
 }
 ```
 

@@ -75,7 +75,7 @@ let networkInterceptor = NetworkInterceptor()
 let logger = Letopis(interceptors: [networkInterceptor])
 
 // Логирование событий
-logger.info("Действие пользователя", priority: .critical)
+logger.info("Действие пользователя", isCritical: true)
 
 // Обновление состояния сети
 await networkInterceptor.setOnline(false)

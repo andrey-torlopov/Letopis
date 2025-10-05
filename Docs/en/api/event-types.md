@@ -85,7 +85,7 @@ logger
 logger
     .event(ErrorEvents.network)
     .action(ErrorAction.retrying)
-    .priority(.critical)
+    .critical()
     .error("Connection error")
 ```
 

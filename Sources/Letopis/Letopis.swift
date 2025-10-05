@@ -136,7 +136,7 @@ public final class Letopis: @unchecked Sendable {
     /// Creates an informational log event.
     /// - Parameters:
     ///   - message: Descriptive message to log.
-    ///   - priority: Priority of the event. Defaults to ``LogPriority/default``.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
@@ -160,7 +160,7 @@ public final class Letopis: @unchecked Sendable {
     /// Creates a warning log event.
     /// - Parameters:
     ///   - message: Descriptive message to log.
-    ///   - priority: Priority of the event. Defaults to ``LogPriority/default``.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
@@ -184,7 +184,7 @@ public final class Letopis: @unchecked Sendable {
     /// Creates an error log event from a descriptive message.
     /// - Parameters:
     ///   - message: Descriptive message to log.
-    ///   - priority: Priority of the event. Defaults to ``LogPriority/critical``.
+    ///   - isCritical: Whether the event is critical. Defaults to `true`.
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
@@ -208,7 +208,7 @@ public final class Letopis: @unchecked Sendable {
     /// Creates an error log event from an ``Error`` instance.
     /// - Parameters:
     ///   - error: Error to log.
-    ///   - priority: Priority of the event. Defaults to ``LogPriority/critical``.
+    ///   - isCritical: Whether the event is critical. Defaults to `true`.
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
@@ -232,7 +232,7 @@ public final class Letopis: @unchecked Sendable {
     /// Creates a debug log event.
     /// - Parameters:
     ///   - message: Descriptive message to log.
-    ///   - priority: Priority of the event. Defaults to ``LogPriority/default``.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
@@ -256,7 +256,7 @@ public final class Letopis: @unchecked Sendable {
     /// Creates an analytics log event intended for analytics services.
     /// - Parameters:
     ///   - message: Descriptive message to log.
-    ///   - priority: Priority of the event. Defaults to ``LogPriority/default``.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.

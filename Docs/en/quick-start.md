@@ -103,13 +103,13 @@ logger
     .info("Fetching user data")
 ```
 
-### Logging errors with critical priority
+### Logging critical errors
 
 ```swift
 logger
     .event(AppEventType.error)
     .action(AppEventAction.networkFailure)
-    .priority(.critical)
+    .critical()
     .payload(["error_code": "500", "retry_count": "3"])
     .error("Failed to load user data")
 ```
@@ -132,7 +132,7 @@ If the builder is overkill, you can use direct methods:
 // Log successful purchase
 logger.info(
     "Purchase completed successfully",
-    priority: .critical,
+    isCritical: false,
     payload: ["product_id": "premium_plan", "amount": "9.99"],
     eventType: .analytics,
     eventAction: .purchase
@@ -141,7 +141,7 @@ logger.info(
 // Log error
 logger.error(
     "Network request failed",
-    priority: .critical,
+    isCritical: true,
     payload: ["url": "https://api.example.com/data", "status_code": "404"],
     eventType: .error,
     eventAction: .networkFailure

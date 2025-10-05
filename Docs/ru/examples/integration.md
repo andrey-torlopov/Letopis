@@ -112,7 +112,7 @@ final class CoreDataInterceptor: LetopisInterceptor {
             entity.id = logEvent.id.uuidString
             entity.message = logEvent.message
             entity.timestamp = logEvent.timestamp
-            entity.priority = logEvent.priority.rawValue
+            entity.isCritical = logEvent.isCritical
             
             try? self.context.save()
         }

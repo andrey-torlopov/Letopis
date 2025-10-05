@@ -96,7 +96,7 @@ logger.debug("Cache state: \(cache)")
 #endif
 
 // Good - always log errors
-logger.error("Fatal error", priority: .critical)
+logger.error("Fatal error", isCritical: true)
 ```
 
 ### Avoid expensive operations in payloads

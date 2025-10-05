@@ -18,7 +18,7 @@ public struct SourceInfo {
 ///     .event("user_action")
 ///     .action("button_tap")
 ///     .payload(["screen": "home"])
-///     .priority(.critical)
+///     .critical()
 ///     .sensitive(keys: ["user_id"])
 ///     .info("User tapped button")
 /// ```
