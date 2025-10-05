@@ -8,12 +8,19 @@
 import Letopis
 ```
 
-## Определение типов событий
+## Использование встроенных типов событий
 
-Создайте собственные типы событий и действий, подписав enum под соответствующие протоколы:
+Letopis предоставляет готовые типы событий для типичных сценариев:
 
 ```swift
-// Типы событий
+// Используйте встроенные типы
+import Letopis
+
+// UserEvents - для действий пользователя
+// NetworkEvents - для сетевых запросов
+// ErrorEvents - для ошибок
+
+// Или создайте собственные типы
 enum AppEventType: String, EventTypeProtocol {
     case userAction = "user_action"
     case apiCall = "api_call"
@@ -49,7 +56,33 @@ private let logger = Letopis(
 
 ## Примеры использования
 
-### Логирование пользовательских действий
+### Быстрый старт с консольным логгером
+
+```swift
+// Используйте готовый статический логгер для быстрой отладки
+Letopis.console.log("Быстрое сообщение для отладки")
+Letopis.console.log("Ошибка", level: .error, event: "network")
+```
+
+### Логирование с встроенными типами
+
+```swift
+// Используйте встроенные типы событий
+logger
+    .event(UserEvents.tap)
+    .action(UserAction.click)
+    .payload(["button": "submit", "screen": "profile"])
+    .info("Пользователь нажал кнопку")
+
+// Сетевой запрос
+logger
+    .event(NetworkEvents.http)
+    .action(NetworkAction.success)
+    .payload(["endpoint": "/api/users"])
+    .info("Запрос выполнен успешно")
+```
+
+### Логирование с собственными типами
 
 ```swift
 logger

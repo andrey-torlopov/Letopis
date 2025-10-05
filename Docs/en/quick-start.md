@@ -8,12 +8,19 @@ This guide will help you get started with Letopis in just a few minutes.
 import Letopis
 ```
 
-## Define event types
+## Use built-in event types
 
-Create your own event types and actions by conforming enums to the corresponding protocols:
+Letopis provides ready-to-use event types for common scenarios:
 
 ```swift
-// Event types
+// Use built-in types
+import Letopis
+
+// UserEvents - for user interactions
+// NetworkEvents - for network requests
+// ErrorEvents - for error handling
+
+// Or create your own custom types
 enum AppEventType: String, EventTypeProtocol {
     case userAction = "user_action"
     case apiCall = "api_call"
@@ -49,7 +56,33 @@ private let logger = Letopis(
 
 ## Usage examples
 
-### Logging user interactions
+### Quick start with console logger
+
+```swift
+// Use the static console logger for quick debugging
+Letopis.console.log("Quick debug message")
+Letopis.console.log("Error occurred", level: .error, event: "network")
+```
+
+### Logging with built-in types
+
+```swift
+// Use built-in event types
+logger
+    .event(UserEvents.tap)
+    .action(UserAction.click)
+    .payload(["button": "submit", "screen": "profile"])
+    .info("User clicked button")
+
+// Network request
+logger
+    .event(NetworkEvents.http)
+    .action(NetworkAction.success)
+    .payload(["endpoint": "/api/users"])
+    .info("Request successful")
+```
+
+### Logging with custom types
 
 ```swift
 logger
