@@ -43,19 +43,19 @@ public final class Letopis: @unchecked Sendable {
     /// - Parameters:
     ///   - message: Descriptive message associated with the event.
     ///   - type: Semantic type of the event.
-    ///   - priority: Priority of the event. Defaults to ``LogPriority/default``.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
     ///   - payload: Additional metadata that should accompany the event.
     /// - Returns: Fully constructed ``LogEvent``.
     @discardableResult
     func createLogEvent(
         _ message: String,
         type: LogEventType,
-        priority: LogPriority = .default,
+        isCritical: Bool = false,
         payload: [String: String] = [:]
     ) -> LogEvent {
         let event = LogEvent(
             type: type,
-            priority: priority,
+            isCritical: isCritical,
             message: message,
             payload: payload
         )
@@ -144,7 +144,7 @@ public final class Letopis: @unchecked Sendable {
     @discardableResult
     public func info(
         _ message: String,
-        priority: LogPriority = .default,
+        isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
         eventAction: (any EventActionProtocol)? = nil
@@ -152,7 +152,7 @@ public final class Letopis: @unchecked Sendable {
         createLogEvent(
             message,
             type: .info,
-            priority: priority,
+            isCritical: isCritical,
             payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
         )
     }
@@ -168,7 +168,7 @@ public final class Letopis: @unchecked Sendable {
     @discardableResult
     public func warning(
         _ message: String,
-        priority: LogPriority = .default,
+        isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
         eventAction: (any EventActionProtocol)? = nil
@@ -176,7 +176,7 @@ public final class Letopis: @unchecked Sendable {
         createLogEvent(
             message,
             type: .warning,
-            priority: priority,
+            isCritical: isCritical,
             payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
         )
     }
@@ -192,7 +192,7 @@ public final class Letopis: @unchecked Sendable {
     @discardableResult
     public func error(
         _ message: String,
-        priority: LogPriority = .critical,
+        isCritical: Bool = true,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
         eventAction: (any EventActionProtocol)? = nil
@@ -200,7 +200,7 @@ public final class Letopis: @unchecked Sendable {
         createLogEvent(
             message,
             type: .error,
-            priority: priority,
+            isCritical: isCritical,
             payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
         )
     }
@@ -216,7 +216,7 @@ public final class Letopis: @unchecked Sendable {
     @discardableResult
     public func error(
         _ error: Error,
-        priority: LogPriority = .critical,
+        isCritical: Bool = true,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
         eventAction: (any EventActionProtocol)? = nil
@@ -224,7 +224,7 @@ public final class Letopis: @unchecked Sendable {
         createLogEvent(
             error.localizedDescription,
             type: .error,
-            priority: priority,
+            isCritical: isCritical,
             payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
         )
     }
@@ -240,7 +240,7 @@ public final class Letopis: @unchecked Sendable {
     @discardableResult
     public func debug(
         _ message: String,
-        priority: LogPriority = .default,
+        isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
         eventAction: (any EventActionProtocol)? = nil
@@ -248,7 +248,7 @@ public final class Letopis: @unchecked Sendable {
         createLogEvent(
             message,
             type: .debug,
-            priority: priority,
+            isCritical: isCritical,
             payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
         )
     }
@@ -264,7 +264,7 @@ public final class Letopis: @unchecked Sendable {
     @discardableResult
     public func analytics(
         _ message: String,
-        priority: LogPriority = .default,
+        isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
         eventAction: (any EventActionProtocol)? = nil
@@ -272,7 +272,7 @@ public final class Letopis: @unchecked Sendable {
         createLogEvent(
             message,
             type: .analytics,
-            priority: priority,
+            isCritical: isCritical,
             payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
         )
     }

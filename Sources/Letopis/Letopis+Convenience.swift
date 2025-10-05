@@ -37,7 +37,7 @@ public extension Letopis {
     /// - Parameters:
     ///   - message: Message to log
     ///   - level: Log level (defaults to .info)
-    ///   - priority: Log priority (defaults to .default)
+    ///   - isCritical: Whether the event is critical (defaults to `false`)
     ///   - event: Optional event type as String
     ///   - action: Optional action as String
     ///   - payload: Optional payload dictionary
@@ -46,13 +46,13 @@ public extension Letopis {
     /// Example:
     /// ```swift
     /// logger.log("User logged in", event: "auth", action: "success")
-    /// logger.log("Network error", level: .error, event: "network")
+    /// logger.log("Network error", level: .error, isCritical: true, event: "network")
     /// ```
     @discardableResult
     func log(
         _ message: String,
         level: LogLevel = .info,
-        priority: LogPriority = .default,
+        isCritical: Bool = false,
         event: String? = nil,
         action: String? = nil,
         payload: [String: String]? = nil
@@ -62,15 +62,15 @@ public extension Letopis {
 
         switch level {
         case .info:
-            return info(message, priority: priority, payload: payload, eventType: eventType, eventAction: eventAction)
+            return info(message, isCritical: isCritical, payload: payload, eventType: eventType, eventAction: eventAction)
         case .debug:
-            return debug(message, priority: priority, payload: payload, eventType: eventType, eventAction: eventAction)
+            return debug(message, isCritical: isCritical, payload: payload, eventType: eventType, eventAction: eventAction)
         case .warning:
-            return warning(message, priority: priority, payload: payload, eventType: eventType, eventAction: eventAction)
+            return warning(message, isCritical: isCritical, payload: payload, eventType: eventType, eventAction: eventAction)
         case .error:
-            return error(message, priority: priority, payload: payload, eventType: eventType, eventAction: eventAction)
+            return error(message, isCritical: isCritical, payload: payload, eventType: eventType, eventAction: eventAction)
         case .analytics:
-            return analytics(message, priority: priority, payload: payload, eventType: eventType, eventAction: eventAction)
+            return analytics(message, isCritical: isCritical, payload: payload, eventType: eventType, eventAction: eventAction)
         }
     }
 
@@ -78,7 +78,7 @@ public extension Letopis {
     ///
     /// - Parameters:
     ///   - error: Error object to log
-    ///   - priority: Log priority (defaults to .critical)
+    ///   - isCritical: Whether the event is critical (defaults to `true`)
     ///   - event: Optional event type as String
     ///   - action: Optional action as String
     ///   - payload: Optional payload dictionary
@@ -91,7 +91,7 @@ public extension Letopis {
     @discardableResult
     func log(
         _ error: Error,
-        priority: LogPriority = .critical,
+        isCritical: Bool = true,
         event: String? = nil,
         action: String? = nil,
         payload: [String: String]? = nil
@@ -99,7 +99,7 @@ public extension Letopis {
         let eventType: EventTypeProtocol? = event.map { StringEventType(value: $0) }
         let eventAction: EventActionProtocol? = action.map { StringEventAction(value: $0) }
 
-        return self.error(error, priority: priority, payload: payload, eventType: eventType, eventAction: eventAction)
+        return self.error(error, isCritical: isCritical, payload: payload, eventType: eventType, eventAction: eventAction)
     }
 }
 

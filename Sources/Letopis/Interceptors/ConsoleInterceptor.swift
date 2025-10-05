@@ -23,7 +23,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     public var name: String { "ConsoleInterceptor" }
 
     private let logTypes: Set<LogEventType>?
-    private let priorities: Set<LogPriority>?
+    private let criticalOnly: Bool
     private let eventTypes: Set<String>?
     private let actions: Set<String>?
     private let sourceFiles: Set<String>?
@@ -34,7 +34,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     /// Creates a console interceptor using raw string filters.
     /// - Parameters:
     ///   - logTypes: Accepted log event types.
-    ///   - priorities: Accepted log priorities.
+    ///   - criticalOnly: If `true`, only critical events are logged. Defaults to `false`.
     ///   - eventTypes: Accepted event types extracted from payload.
     ///   - actions: Accepted event actions extracted from payload.
     ///   - sourceFiles: Accepted source file names from payload metadata.
@@ -44,7 +44,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     ///   - printer: Closure that outputs a formatted message. Defaults to ``Swift/print(_:)``. Ignored when `useOSLog` is `true`.
     public init(
         logTypes: [LogEventType]? = nil,
-        priorities: [LogPriority]? = nil,
+        criticalOnly: Bool = false,
         eventTypes: [String]? = nil,
         actions: [String]? = nil,
         sourceFiles: [String]? = nil,
@@ -54,7 +54,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
         printer: @escaping Printer = { print($0) }
     ) {
         self.logTypes = ConsoleInterceptor.normalize(logTypes)
-        self.priorities = ConsoleInterceptor.normalize(priorities)
+        self.criticalOnly = criticalOnly
         self.eventTypes = ConsoleInterceptor.normalize(eventTypes)
         self.actions = ConsoleInterceptor.normalize(actions)
         self.sourceFiles = ConsoleInterceptor.normalize(sourceFiles)
@@ -92,25 +92,27 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     ///   - event: Event to log.
     ///   - logger: Logger instance to use.
     private func logWithOSLog(_ event: LogEvent, logger: Logger) {
-        let osLogLevel = mapToOSLogLevel(event.priority)
+        let osLogLevel = mapToOSLogLevel(event.type, isCritical: event.isCritical)
         let message = formatForOSLog(event)
 
         logger.log(level: osLogLevel, "\(message)")
     }
 
-    /// Maps Letopis priority to OSLog level.
-    /// - Parameter priority: Letopis log priority.
+    /// Maps Letopis event type to OSLog level.
+    /// - Parameters:
+    ///   - type: Letopis log event type.
+    ///   - isCritical: Whether the event is marked as critical priority.
     /// - Returns: Corresponding OSLog level.
-    private func mapToOSLogLevel(_ priority: LogPriority) -> OSLogType {
-        switch priority {
-        case .low:
+    private func mapToOSLogLevel(_ type: LogEventType, isCritical: Bool) -> OSLogType {
+        switch type {
+        case .debug:
             return .debug
-        case .medium:
+        case .info, .analytics:
             return .info
-        case .high:
-            return .default
-        case .critical:
-            return .error
+        case .warning:
+            return isCritical ? .error : .default
+        case .error:
+            return isCritical ? .fault : .error
         }
     }
 
@@ -157,7 +159,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
         #endif
 
         if let logTypes, !logTypes.contains(event.type) { return false }
-        if let priorities, !priorities.contains(event.priority) { return false }
+        if criticalOnly && !event.isCritical { return false }
 
         if let eventTypes {
             guard
@@ -197,7 +199,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     private func format(_ event: LogEvent) -> String {
         var parts: [String] = []
 
-        parts.append("\(event.type.rawValue) \(event.priority.icon) \(event.message)")
+        parts.append("\(event.type.rawValue) \(event.criticalityIcon) \(event.message)")
 
         if !event.payload.isEmpty {
             // Extract source information

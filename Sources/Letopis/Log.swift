@@ -24,7 +24,7 @@ public struct SourceInfo {
 /// ```
 public final class Log {
     private let logger: Letopis
-    private var priority: LogPriority = .default
+    private var isCritical: Bool = false
     private var payload: [String: String] = [:]
     private var eventType: String?
     private var eventAction: String?
@@ -81,12 +81,11 @@ public final class Log {
         return self
     }
 
-    /// Sets the priority level for the log event.
-    /// - Parameter priority: Priority level (default or critical).
+    /// Marks the log event as critical, requiring immediate attention.
     /// - Returns: Self for chaining.
     @discardableResult
-    public func priority(_ priority: LogPriority) -> Log {
-        self.priority = priority
+    public func critical() -> Log {
+        self.isCritical = true
         return self
     }
 
@@ -200,7 +199,7 @@ public final class Log {
         let event = logger.createLogEvent(
             message,
             type: type,
-            priority: priority,
+            isCritical: isCritical,
             payload: buildPayload()
         )
         return event
