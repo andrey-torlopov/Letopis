@@ -184,7 +184,7 @@ struct NetworkScenarioDemo {
         }
     }
 
-    /// Creates mixed priority logs for testing
+    /// Creates mixed critical/non-critical logs for testing
     static func generateTestLogs(logger: Letopis) {
         print("\n🚀 Starting network interceptor demonstration...")
         print("📋 Generating logs with different criticality levels to test network handling\n")

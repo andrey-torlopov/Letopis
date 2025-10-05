@@ -57,7 +57,7 @@ logger
 logger
     .event(EcommerceEventType.payment)
     .action(EcommerceAction.purchase)
-    .priority(.critical)
+    .critical()
     .payload(["order_id": "ORD-789", "amount": "299.99"])
     .analytics("Покупка завершена")
 ```

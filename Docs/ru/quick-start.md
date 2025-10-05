@@ -109,7 +109,7 @@ logger
 logger
     .event(AppEventType.error)
     .action(AppEventAction.networkFailure)
-    .priority(.critical)
+    .critical()
     .payload(["error_code": "500", "retry_count": "3"])
     .error("Не удалось загрузить данные пользователя")
 ```
@@ -132,7 +132,7 @@ logger
 // Логирование успешной покупки
 logger.info(
     "Покупка завершена успешно",
-    priority: .critical,
+    isCritical: true,
     payload: ["product_id": "premium_plan", "amount": "9.99"],
     eventType: .analytics,
     eventAction: .purchase
@@ -141,7 +141,7 @@ logger.info(
 // Логирование ошибки
 logger.error(
     "Сетевой запрос не выполнен",
-    priority: .critical,
+    isCritical: true,
     payload: ["url": "https://api.example.com/data", "status_code": "404"],
     eventType: .error,
     eventAction: .networkFailure

@@ -65,7 +65,7 @@ logger
 logger
     .event(AppEventType.apiCall)
     .action(AppEventAction.fetch)
-    .priority(.critical)
+    .critical()
     .payload([
         "endpoint": "/api/users/12345",
         "method": "GET",
@@ -83,7 +83,7 @@ do {
 } catch {
     logger
         .event(AppEventType.error)
-        .priority(.critical)
+        .critical()
         .error(error)
 }
 ```
@@ -101,7 +101,7 @@ let logger = Letopis(
     ])
 
 // Это будет залогировано
-logger.event("user_action").priority(.critical).info("Вход в систему")
+logger.event("user_action").critical().info("Вход в систему")
 
 // Это будет отфильтровано (тип debug)
 logger.event("system").debug("Кеш обновлен")

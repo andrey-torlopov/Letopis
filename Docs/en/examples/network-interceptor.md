@@ -72,7 +72,7 @@ let networkInterceptor = NetworkInterceptor()
 let logger = Letopis(interceptors: [networkInterceptor])
 
 // Log events
-logger.info("User action", priority: .critical)
+logger.info("User action", isCritical: true)
 
 // Update network state
 await networkInterceptor.setOnline(false)
