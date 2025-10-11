@@ -65,6 +65,10 @@ public final class Letopis: @unchecked Sendable {
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
+    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
+    ///   - file: Source file path (automatically captured).
+    ///   - function: Function name (automatically captured).
+    ///   - line: Line number (automatically captured).
     /// - Returns: Created ``LogEvent`` instance.
     @discardableResult
     public func info(
@@ -72,13 +76,25 @@ public final class Letopis: @unchecked Sendable {
         isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil
+        eventAction: (any EventActionProtocol)? = nil,
+        includeSource: Bool = false,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line
     ) -> LogEvent {
         createLogEvent(
             message,
             type: .info,
             isCritical: isCritical,
-            payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
+            payload: combinePayload(
+                payload: payload,
+                eventType: eventType,
+                eventAction: eventAction,
+                includeSource: includeSource,
+                file: file,
+                function: function,
+                line: line
+            )
         )
     }
 
@@ -89,6 +105,10 @@ public final class Letopis: @unchecked Sendable {
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
+    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
+    ///   - file: Source file path (automatically captured).
+    ///   - function: Function name (automatically captured).
+    ///   - line: Line number (automatically captured).
     /// - Returns: Created ``LogEvent`` instance.
     @discardableResult
     public func warning(
@@ -96,13 +116,25 @@ public final class Letopis: @unchecked Sendable {
         isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil
+        eventAction: (any EventActionProtocol)? = nil,
+        includeSource: Bool = false,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line
     ) -> LogEvent {
         createLogEvent(
             message,
             type: .warning,
             isCritical: isCritical,
-            payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
+            payload: combinePayload(
+                payload: payload,
+                eventType: eventType,
+                eventAction: eventAction,
+                includeSource: includeSource,
+                file: file,
+                function: function,
+                line: line
+            )
         )
     }
 
@@ -113,6 +145,10 @@ public final class Letopis: @unchecked Sendable {
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
+    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
+    ///   - file: Source file path (automatically captured).
+    ///   - function: Function name (automatically captured).
+    ///   - line: Line number (automatically captured).
     /// - Returns: Created ``LogEvent`` instance.
     @discardableResult
     public func error(
@@ -120,13 +156,25 @@ public final class Letopis: @unchecked Sendable {
         isCritical: Bool = true,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil
+        eventAction: (any EventActionProtocol)? = nil,
+        includeSource: Bool = false,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line
     ) -> LogEvent {
         createLogEvent(
             message,
             type: .error,
             isCritical: isCritical,
-            payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
+            payload: combinePayload(
+                payload: payload,
+                eventType: eventType,
+                eventAction: eventAction,
+                includeSource: includeSource,
+                file: file,
+                function: function,
+                line: line
+            )
         )
     }
 
@@ -137,6 +185,10 @@ public final class Letopis: @unchecked Sendable {
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
+    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
+    ///   - file: Source file path (automatically captured).
+    ///   - function: Function name (automatically captured).
+    ///   - line: Line number (automatically captured).
     /// - Returns: Created ``LogEvent`` instance.
     @discardableResult
     public func error(
@@ -144,13 +196,25 @@ public final class Letopis: @unchecked Sendable {
         isCritical: Bool = true,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil
+        eventAction: (any EventActionProtocol)? = nil,
+        includeSource: Bool = false,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line
     ) -> LogEvent {
         createLogEvent(
             error.localizedDescription,
             type: .error,
             isCritical: isCritical,
-            payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
+            payload: combinePayload(
+                payload: payload,
+                eventType: eventType,
+                eventAction: eventAction,
+                includeSource: includeSource,
+                file: file,
+                function: function,
+                line: line
+            )
         )
     }
 
@@ -161,6 +225,10 @@ public final class Letopis: @unchecked Sendable {
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
+    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
+    ///   - file: Source file path (automatically captured).
+    ///   - function: Function name (automatically captured).
+    ///   - line: Line number (automatically captured).
     /// - Returns: Created ``LogEvent`` instance.
     @discardableResult
     public func debug(
@@ -168,13 +236,25 @@ public final class Letopis: @unchecked Sendable {
         isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil
+        eventAction: (any EventActionProtocol)? = nil,
+        includeSource: Bool = false,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line
     ) -> LogEvent {
         createLogEvent(
             message,
             type: .debug,
             isCritical: isCritical,
-            payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
+            payload: combinePayload(
+                payload: payload,
+                eventType: eventType,
+                eventAction: eventAction,
+                includeSource: includeSource,
+                file: file,
+                function: function,
+                line: line
+            )
         )
     }
 
@@ -185,6 +265,10 @@ public final class Letopis: @unchecked Sendable {
     ///   - payload: Additional metadata for the event.
     ///   - eventType: Optional high-level classification of the event.
     ///   - eventAction: Optional action performed during the event.
+    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
+    ///   - file: Source file path (automatically captured).
+    ///   - function: Function name (automatically captured).
+    ///   - line: Line number (automatically captured).
     /// - Returns: Created ``LogEvent`` instance.
     @discardableResult
     public func analytics(
@@ -192,13 +276,25 @@ public final class Letopis: @unchecked Sendable {
         isCritical: Bool = false,
         payload: [String: String]? = nil,
         eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil
+        eventAction: (any EventActionProtocol)? = nil,
+        includeSource: Bool = false,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line
     ) -> LogEvent {
         createLogEvent(
             message,
             type: .analytics,
             isCritical: isCritical,
-            payload: combinePayload(payload: payload, eventType: eventType, eventAction: eventAction)
+            payload: combinePayload(
+                payload: payload,
+                eventType: eventType,
+                eventAction: eventAction,
+                includeSource: includeSource,
+                file: file,
+                function: function,
+                line: line
+            )
         )
     }
 
@@ -258,11 +354,19 @@ public final class Letopis: @unchecked Sendable {
     ///   - payload: Payload provided by the caller.
     ///   - eventType: Optional high-level event type.
     ///   - eventAction: Optional action that describes the event.
+    ///   - includeSource: Whether to include source code location metadata.
+    ///   - file: Source file path.
+    ///   - function: Function name.
+    ///   - line: Line number.
     /// - Returns: A normalized payload dictionary.
     internal func combinePayload(
         payload: [String: String]?,
         eventType: (any EventTypeProtocol)?,
-        eventAction: (any EventActionProtocol)?
+        eventAction: (any EventActionProtocol)?,
+        includeSource: Bool = false,
+        file: String = "",
+        function: String = "",
+        line: Int = 0
     ) -> [String: String] {
         var updatedPayload = payload ?? [:]
 
@@ -272,6 +376,13 @@ public final class Letopis: @unchecked Sendable {
 
         if let eventAction {
             updatedPayload["event_action"] = eventAction.value
+        }
+
+        if includeSource {
+            let fileName = (file as NSString).lastPathComponent
+            updatedPayload["source_file"] = fileName
+            updatedPayload["source_function"] = function
+            updatedPayload["source_line"] = String(line)
         }
 
         return updatedPayload.isEmpty ? [:] : updatedPayload

@@ -86,8 +86,9 @@ logger.warning(
 // Логирование ошибок (критично по умолчанию)
 logger.error("Сетевой запрос не выполнен", eventType: .apiCall)
 
-// Отладочное логирование
-logger.debug("Попадание в кеш", payload: ["key": "user_profile"])
+// Отладочное логирование с информацией о местоположении в коде
+logger.debug("Попадание в кеш", payload: ["key": "user_profile"], includeSource: true)
+// Автоматически захватывает файл, функцию и номер строки
 
 // События аналитики
 logger.analytics(

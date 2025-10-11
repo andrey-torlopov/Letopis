@@ -92,8 +92,9 @@ logger.error(
     eventAction: AppEventAction.networkFailure
 )
 
-// Debug messages
-logger.debug("Internal cache updated")
+// Debug messages with source location
+logger.debug("Internal cache updated", includeSource: true)
+// Automatically adds file, function, and line number to the log
 
 // Analytics events
 logger.analytics(

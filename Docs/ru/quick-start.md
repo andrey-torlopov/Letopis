@@ -92,8 +92,9 @@ logger.error(
     eventAction: AppEventAction.networkFailure
 )
 
-// Отладочные сообщения
-logger.debug("Внутренний кэш обновлен")
+// Отладочные сообщения с информацией о местоположении в коде
+logger.debug("Внутренний кэш обновлен", includeSource: true)
+// Автоматически добавляет файл, функцию и номер строки в лог
 
 // События аналитики
 logger.analytics(

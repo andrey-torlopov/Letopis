@@ -86,8 +86,9 @@ logger.warning(
 // Error logging (critical by default)
 logger.error("Network request failed", eventType: .apiCall)
 
-// Debug logging
-logger.debug("Cache hit", payload: ["key": "user_profile"])
+// Debug logging with source location
+logger.debug("Cache hit", payload: ["key": "user_profile"], includeSource: true)
+// Automatically captures file, function, and line number
 
 // Analytics events
 logger.analytics(
