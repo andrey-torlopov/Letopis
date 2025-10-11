@@ -19,10 +19,12 @@
 
 *Read this in other languages: [Русский](README-ru.md)*
 
-`Letopis` is a lightweight logging and tracing module that lets you describe application events through a declarative API and deliver them through a chain of interceptors. The package has no external dependencies, so it can be used from any layer of your codebase.
+`Letopis` is a lightweight logging and tracing module that lets you describe application events through a simple and intuitive API. The package offers two approaches: a straightforward method-based API for everyday use, and an optional fluent DSL for more expressive scenarios. All events are delivered through a chain of interceptors with no external dependencies.
 
 ## Key Features
 
+- **Simple and intuitive API** — straightforward methods (`info`, `warning`, `error`, etc.) for common logging tasks
+- **Optional DSL syntax** — expressive fluent API available for advanced use cases
 - **Unified logging entry point** — one facade for console, network, and analytics
 - **Extensible architecture through interceptors** — flexible filtering and event routing
 - **Flexible network traffic management** — smart buffering and prioritization
@@ -33,10 +35,15 @@
 ```swift
 import Letopis
 
-// Define event types
+// Define event types (optional)
 enum AppEventType: String, EventTypeProtocol {
     case userAction = "user_action"
     case apiCall = "api_call"
+}
+
+enum UserAction: String, EventActionProtocol {
+    case screenOpen = "screen_open"
+    case buttonTap = "button_tap"
 }
 
 // Initialize logger
@@ -44,11 +51,16 @@ let logger = Letopis(
     interceptors: [ConsoleInterceptor()]
 )
 
-// Use it
-logger
-    .event(AppEventType.userAction)
-    .payload(["screen": "profile"])
-    .info("User opened profile screen")
+// Simple usage - just log a message
+logger.info("User opened profile screen")
+
+// Add metadata with optional parameters
+logger.info(
+    "User opened profile screen",
+    payload: ["screen": "profile", "user_id": "123"],
+    eventType: AppEventType.userAction,
+    eventAction: UserAction.screenOpen
+)
 ```
 
 ## Documentation
@@ -59,18 +71,53 @@ logger
 
 ## Usage Examples
 
+### Standard API (Recommended)
+
 ```swift
-// Logging critical events
-logger
+// Info logging
+logger.info("Application started")
+
+// Warning with metadata
+logger.warning(
+    "API rate limit approaching",
+    payload: ["remaining": "10", "limit": "100"]
+)
+
+// Error logging (critical by default)
+logger.error("Network request failed", eventType: .apiCall)
+
+// Debug logging
+logger.debug("Cache hit", payload: ["key": "user_profile"])
+
+// Analytics events
+logger.analytics(
+    "Purchase completed",
+    payload: ["item_id": "12345", "price": "9.99"]
+)
+```
+
+### Optional DSL API
+
+For users who prefer a fluent, chainable syntax:
+
+```swift
+// Chaining methods with DSL
+logger.log()
     .event(.apiCall)
+    .payload(["endpoint": "/users"])
     .critical()
     .error("Network request failed")
 
 // Masking sensitive data
-logger
+logger.log()
     .payload(["password": "secret123"])
-    .sensitive()
+    .sensitive(keys: ["password"])
     .info("User logged in")
+
+// Adding source code location
+logger.log()
+    .source()
+    .debug("Variable value at this point")
 ```
 
 ## License

@@ -2,11 +2,28 @@ import Foundation
 
 /// Central entry point for creating log events and dispatching them to registered interceptors.
 public final class Letopis: @unchecked Sendable {
-    private var healthTrackers: [InterceptorHealthTracker] = []
-    private var recoveryTimer: Timer?
+
+    // MARK: - Public Properties
 
     /// Global list of sensitive keys that should be masked in all logs
     public private(set) var sensitiveKeys: Set<String> = []
+
+    /// Returns the number of healthy interceptors.
+    public var healthyInterceptorsCount: Int {
+        return healthTrackers.filter { $0.canHandleEvents }.count
+    }
+
+    /// Returns the total number of interceptors.
+    public var totalInterceptorsCount: Int {
+        return healthTrackers.count
+    }
+
+    // MARK: - Private Properties
+
+    private var healthTrackers: [InterceptorHealthTracker] = []
+    private var recoveryTimer: Timer?
+
+    // MARK: - Initialization
 
     /// Creates a new instance of ``Letopis``.
     /// - Parameters:
@@ -32,105 +49,13 @@ public final class Letopis: @unchecked Sendable {
         recoveryTimer?.invalidate()
     }
 
+    // MARK: - Public Methods
+
     /// Adds a new interceptor to the dispatch list.
     /// - Parameter interceptor: Object conforming to ``LetopisInterceptor`` that should receive log events.
     public func addInterceptor(_ interceptor: LetopisInterceptor) {
         let tracker = InterceptorHealthTracker(interceptor: interceptor)
         healthTrackers.append(tracker)
-    }
-
-    /// Creates a raw log event, forwards it to interceptors and returns the created event.
-    /// - Parameters:
-    ///   - message: Descriptive message associated with the event.
-    ///   - type: Semantic type of the event.
-    ///   - isCritical: Whether the event is critical. Defaults to `false`.
-    ///   - payload: Additional metadata that should accompany the event.
-    /// - Returns: Fully constructed ``LogEvent``.
-    @discardableResult
-    func createLogEvent(
-        _ message: String,
-        type: LogEventType,
-        isCritical: Bool = false,
-        payload: [String: String] = [:]
-    ) -> LogEvent {
-        let event = LogEvent(
-            type: type,
-            isCritical: isCritical,
-            message: message,
-            payload: payload
-        )
-        notifyInterceptors(with: event)
-        return event
-    }
-
-    /// Iterates through the registered interceptors and forwards the provided event.
-    /// - Parameter event: Event that should be delivered to interceptors.
-    private func notifyInterceptors(with event: LogEvent) {
-        guard healthTrackers.isEmpty == false else {
-            print("⚠️ Letopis interceptors is empty!")
-            return
-        }
-
-        Task {
-            await withTaskGroup(of: Void.self) { group in
-                for tracker in healthTrackers {
-                    guard tracker.canHandleEvents else { continue }
-
-                    group.addTask {
-                        do {
-                            try await tracker.interceptor.handle(event)
-                            tracker.recordSuccess()
-                        } catch {
-                            tracker.recordFailure()
-                            #if DEBUG
-                            // Optionally log the failure
-                            print("⚠️  Interceptor failed to handle event: \(error)")
-                            #endif
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /// Performs health checks and recovery attempts for failed interceptors.
-    private func performHealthChecks() {
-        Task {
-            for tracker in healthTrackers {
-                if tracker.shouldAttemptRecovery() {
-                    let recovered = await tracker.attemptRecovery()
-                    if recovered {
-                        print("✅ Interceptor recovered successfully")
-                    } else if tracker.isPermanentlyFailed {
-                        print("❌ Interceptor permanently failed after maximum recovery attempts")
-                    }
-                }
-            }
-        }
-    }
-
-    /// Merges optional metadata into a single payload dictionary used in log events.
-    /// - Parameters:
-    ///   - payload: Payload provided by the caller.
-    ///   - eventType: Optional high-level event type.
-    ///   - eventAction: Optional action that describes the event.
-    /// - Returns: A normalized payload dictionary.
-    private func combinePayload(
-        payload: [String: String]?,
-        eventType: (any EventTypeProtocol)?,
-        eventAction: (any EventActionProtocol)?
-    ) -> [String: String] {
-        var updatedPayload = payload ?? [:]
-
-        if let eventType {
-            updatedPayload["event_type"] = eventType.value
-        }
-
-        if let eventAction {
-            updatedPayload["event_action"] = eventAction.value
-        }
-
-        return updatedPayload.isEmpty ? [:] : updatedPayload
     }
 
     /// Creates an informational log event.
@@ -285,16 +210,6 @@ public final class Letopis: @unchecked Sendable {
         }
     }
 
-    /// Returns the number of healthy interceptors.
-    public var healthyInterceptorsCount: Int {
-        return healthTrackers.filter { $0.canHandleEvents }.count
-    }
-
-    /// Returns the total number of interceptors.
-    public var totalInterceptorsCount: Int {
-        return healthTrackers.count
-    }
-
     /// Manually triggers health checks for all interceptors.
     public func triggerHealthChecks() {
         performHealthChecks()
@@ -310,5 +225,105 @@ public final class Letopis: @unchecked Sendable {
     /// - Parameter keys: Keys to remove from the sensitive keys list
     public func removeSensitiveKeys(_ keys: [String]) {
         sensitiveKeys.subtract(keys)
+    }
+
+    // MARK: - Internal Methods
+
+    /// Creates a raw log event, forwards it to interceptors and returns the created event.
+    /// - Parameters:
+    ///   - message: Descriptive message associated with the event.
+    ///   - type: Semantic type of the event.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata that should accompany the event.
+    /// - Returns: Fully constructed ``LogEvent``.
+    @discardableResult
+    internal func createLogEvent(
+        _ message: String,
+        type: LogEventType,
+        isCritical: Bool = false,
+        payload: [String: String] = [:]
+    ) -> LogEvent {
+        let event = LogEvent(
+            type: type,
+            isCritical: isCritical,
+            message: message,
+            payload: payload
+        )
+        notifyInterceptors(with: event)
+        return event
+    }
+
+    /// Merges optional metadata into a single payload dictionary used in log events.
+    /// - Parameters:
+    ///   - payload: Payload provided by the caller.
+    ///   - eventType: Optional high-level event type.
+    ///   - eventAction: Optional action that describes the event.
+    /// - Returns: A normalized payload dictionary.
+    internal func combinePayload(
+        payload: [String: String]?,
+        eventType: (any EventTypeProtocol)?,
+        eventAction: (any EventActionProtocol)?
+    ) -> [String: String] {
+        var updatedPayload = payload ?? [:]
+
+        if let eventType {
+            updatedPayload["event_type"] = eventType.value
+        }
+
+        if let eventAction {
+            updatedPayload["event_action"] = eventAction.value
+        }
+
+        return updatedPayload.isEmpty ? [:] : updatedPayload
+    }
+}
+
+// MARK: - Private Methods
+
+private extension Letopis {
+    /// Iterates through the registered interceptors and forwards the provided event.
+    /// - Parameter event: Event that should be delivered to interceptors.
+    func notifyInterceptors(with event: LogEvent) {
+        guard healthTrackers.isEmpty == false else {
+            print("⚠️ Letopis interceptors is empty!")
+            return
+        }
+
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for tracker in healthTrackers {
+                    guard tracker.canHandleEvents else { continue }
+
+                    group.addTask {
+                        do {
+                            try await tracker.interceptor.handle(event)
+                            tracker.recordSuccess()
+                        } catch {
+                            tracker.recordFailure()
+                            #if DEBUG
+                            // Optionally log the failure
+                            print("⚠️  Interceptor failed to handle event: \(error)")
+                            #endif
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Performs health checks and recovery attempts for failed interceptors.
+    func performHealthChecks() {
+        Task {
+            for tracker in healthTrackers {
+                if tracker.shouldAttemptRecovery() {
+                    let recovered = await tracker.attemptRecovery()
+                    if recovered {
+                        print("✅ Interceptor recovered successfully")
+                    } else if tracker.isPermanentlyFailed {
+                        print("❌ Interceptor permanently failed after maximum recovery attempts")
+                    }
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,29 @@
 # Key Features
 
+## Simple and Intuitive API
+
+Letopis offers two complementary approaches to logging:
+
+### Standard API (Recommended)
+Direct methods provide a straightforward way to log events:
+```swift
+logger.info("User logged in")
+logger.warning("API rate limit approaching", payload: ["remaining": "10"])
+logger.error("Network request failed", eventType: .apiCall)
+```
+
+### Optional DSL API
+For scenarios requiring more expressiveness, a fluent builder pattern is available:
+```swift
+logger.log()
+    .event(.userAction)
+    .payload(["screen": "profile"])
+    .critical()
+    .info("User opened profile")
+```
+
+Both APIs offer the same functionality — choose what fits your coding style.
+
 ## Unified logging entry point
 
 The same facade sends events to both console and network, while interceptors let you connect any external services: analytics systems, monitoring tools, or custom backends. Developers work with a unified API without worrying about specific delivery channels.

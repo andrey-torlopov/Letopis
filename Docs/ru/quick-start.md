@@ -56,57 +56,81 @@ private let logger = Letopis(
 
 ## Примеры использования
 
-### Быстрый старт с консольным логгером
+### Стандартный API (рекомендуется)
+
+Основной способ логирования - использование прямых методов с опциональными параметрами:
 
 ```swift
-// Используйте готовый статический логгер для быстрой отладки
-Letopis.console.log("Быстрое сообщение для отладки")
-Letopis.console.log("Ошибка", level: .error, event: "network")
+// Простое информационное сообщение
+logger.info("Приложение запущено")
+
+// С метаданными
+logger.info(
+    "Пользователь открыл экран профиля",
+    payload: ["user_id": "12345", "screen": "profile"]
+)
+
+// С типом события и действием
+logger.info(
+    "Пользователь открыл экран профиля",
+    payload: ["user_id": "12345", "screen": "profile"],
+    eventType: AppEventType.userAction,
+    eventAction: AppEventAction.view
+)
+
+// Логирование предупреждений
+logger.warning(
+    "Приближение к лимиту API",
+    payload: ["remaining": "10", "limit": "100"]
+)
+
+// Логирование ошибок (критично по умолчанию)
+logger.error(
+    "Не удалось загрузить данные пользователя",
+    payload: ["error_code": "500", "retry_count": "3"],
+    eventType: AppEventType.error,
+    eventAction: AppEventAction.networkFailure
+)
+
+// Отладочные сообщения
+logger.debug("Внутренний кэш обновлен")
+
+// События аналитики
+logger.analytics(
+    "Покупка завершена успешно",
+    payload: ["product_id": "premium_plan", "amount": "9.99"]
+)
 ```
 
-### Логирование с встроенными типами
+### Опциональный DSL API
+
+Для пользователей, предпочитающих цепочечный синтаксис, доступен DSL API:
 
 ```swift
 // Используйте встроенные типы событий
-logger
+logger.log()
     .event(UserEvents.tap)
     .action(UserAction.click)
     .payload(["button": "submit", "screen": "profile"])
     .info("Пользователь нажал кнопку")
 
 // Сетевой запрос
-logger
+logger.log()
     .event(NetworkEvents.http)
     .action(NetworkAction.success)
     .payload(["endpoint": "/api/users"])
     .info("Запрос выполнен успешно")
-```
 
-### Логирование с собственными типами
-
-```swift
-logger
+// Логирование с собственными типами
+logger.log()
     .event(AppEventType.userAction)
     .action(AppEventAction.view)
     .payload(["user_id": "12345", "screen": "profile"])
     .source() // Добавляет информацию о файле и строке кода
     .info("Пользователь открыл экран профиля")
-```
 
-### Логирование API вызовов
-
-```swift
-logger
-    .event(AppEventType.apiCall)
-    .action(AppEventAction.fetch)
-    .payload(["endpoint": "/api/users/12345", "method": "GET"])
-    .info("Загрузка данных пользователя")
-```
-
-### Логирование ошибок с критическим приоритетом
-
-```swift
-logger
+// Логирование ошибок с критическим приоритетом
+logger.log()
     .event(AppEventType.error)
     .action(AppEventAction.networkFailure)
     .critical()
@@ -114,39 +138,7 @@ logger
     .error("Не удалось загрузить данные пользователя")
 ```
 
-### Debug сообщения
-
-```swift
-logger
-    .event(AppEventType.system)
-    .debug("Внутренний кэш обновлен")
-```
-
 **Примечание:** В этом примере консольный интерцептор показывает только info и error сообщения, связанные с действиями пользователя, API вызовами и ошибками. Debug сообщения и другие типы событий фильтруются.
-
-## Прямые вызовы
-
-Если билдер избыточен, можно использовать прямые методы:
-
-```swift
-// Логирование успешной покупки
-logger.info(
-    "Покупка завершена успешно",
-    isCritical: true,
-    payload: ["product_id": "premium_plan", "amount": "9.99"],
-    eventType: .analytics,
-    eventAction: .purchase
-)
-
-// Логирование ошибки
-logger.error(
-    "Сетевой запрос не выполнен",
-    isCritical: true,
-    payload: ["url": "https://api.example.com/data", "status_code": "404"],
-    eventType: .error,
-    eventAction: .networkFailure
-)
-```
 
 ## Следующие шаги
 
