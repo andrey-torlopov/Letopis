@@ -122,7 +122,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     private func formatForOSLog(_ event: LogEvent) -> String {
         var parts: [String] = []
 
-        parts.append("\(event.type.rawValue)")
+        parts.append("\(event.type.rawValue) \(event.criticalityIcon)")
         parts.append(event.message)
 
         if !event.payload.isEmpty {
