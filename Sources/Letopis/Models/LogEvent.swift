@@ -22,7 +22,7 @@ public struct LogEvent: Codable, Sendable {
 
     /// Visual icon representing the criticality level.
     public var criticalityIcon: String {
-        isCritical ? "🚩" : ""
+        isCritical ? "🛑" : ""
     }
 
     /// Creates a new ``LogEvent`` instance.
