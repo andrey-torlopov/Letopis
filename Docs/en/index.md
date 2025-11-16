@@ -3,8 +3,8 @@
 Welcome to the complete Letopis documentation. Here you'll find detailed guides and references for all features.
 
 Letopis provides two complementary APIs:
-- **Standard API** (Recommended) — Direct methods like `info()`, `warning()`, `error()` for straightforward logging
-- **DSL API** (Optional) — Fluent builder pattern for expressive, chainable logging scenarios
+- **DSL API** (Recommended) — Fluent builder pattern for expressive, chainable logging with rich metadata
+- **Direct Methods API** (Optional) — Simple methods like `info()`, `warning()`, `error()` for quick logging
 
 ## Table of Contents
 
@@ -17,8 +17,8 @@ Letopis provides two complementary APIs:
 - [Architecture Overview](architecture.md)
 
 ### API Reference
-- [Direct Logging Methods](api/direct-methods.md) — **Recommended approach**
-- [Log Builder API (DSL)](api/log-builder.md) — Optional fluent syntax
+- [Log Builder API (DSL)](api/log-builder.md) — **Recommended approach**
+- [Direct Logging Methods](api/direct-methods.md) — Optional simple syntax
 - [Event Types & Actions](api/event-types.md)
 
 ### Advanced Topics

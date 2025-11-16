@@ -19,12 +19,12 @@
 
 *Read this in other languages: [Русский](README-ru.md)*
 
-`Letopis` is a lightweight logging and tracing module that lets you describe application events through a simple and intuitive API. The package offers two approaches: a straightforward method-based API for everyday use, and an optional fluent DSL for more expressive scenarios. All events are delivered through a chain of interceptors with no external dependencies.
+`Letopis` is a lightweight logging and tracing module that lets you describe application events through a simple and intuitive API. The package offers two approaches: an expressive fluent DSL for building rich, structured logs, and a straightforward method-based API for quick and simple logging. All events are delivered through a chain of interceptors with no external dependencies.
 
 ## Key Features
 
-- **Simple and intuitive API** — straightforward methods (`info`, `warning`, `error`, etc.) for common logging tasks
-- **Optional DSL syntax** — expressive fluent API available for advanced use cases
+- **Expressive DSL syntax** — fluent builder API for creating rich, structured log events with metadata
+- **Simple direct methods** — optional straightforward methods (`info`, `warning`, `error`, etc.) for quick logging
 - **Unified logging entry point** — one facade for console, network, and analytics
 - **Extensible architecture through interceptors** — flexible filtering and event routing
 - **Flexible network traffic management** — smart buffering and prioritization
@@ -86,16 +86,15 @@ let logger = Letopis(
     interceptors: [ConsoleInterceptor()]
 )
 
-// Simple usage - just log a message
-logger.info("User opened profile screen")
+// Recommended: Use fluent DSL for expressive, structured logging
+logger.log()
+    .event(AppEventType.userAction)
+    .action(UserAction.screenOpen)
+    .payload(["screen": "profile", "user_id": "123"])
+    .info("User opened profile screen")
 
-// Add metadata with optional parameters
-logger.info(
-    "User opened profile screen",
-    payload: ["screen": "profile", "user_id": "123"],
-    eventType: AppEventType.userAction,
-    eventAction: UserAction.screenOpen
-)
+// Alternative: Simple direct call for quick logging
+logger.info("User opened profile screen")
 ```
 
 ## Documentation
@@ -106,54 +105,62 @@ logger.info(
 
 ## Usage Examples
 
-### Standard API (Recommended)
+### DSL API (Recommended)
+
+The fluent builder pattern provides expressive, chainable syntax for rich logging:
 
 ```swift
-// Info logging
-logger.info("Application started")
+// Basic logging with event metadata
+logger.log()
+    .event(.apiCall)
+    .payload(["endpoint": "/users"])
+    .info("API request started")
 
-// Warning with metadata
-logger.warning(
-    "API rate limit approaching",
-    payload: ["remaining": "10", "limit": "100"]
-)
-
-// Error logging (critical by default)
-logger.error("Network request failed", eventType: .apiCall)
-
-// Debug logging with source location
-logger.debug("Cache hit", payload: ["key": "user_profile"], includeSource: true)
-// Automatically captures file, function, and line number
-
-// Analytics events
-logger.analytics(
-    "Purchase completed",
-    payload: ["item_id": "12345", "price": "9.99"]
-)
-```
-
-### Optional DSL API
-
-For users who prefer a fluent, chainable syntax:
-
-```swift
-// Chaining methods with DSL
+// Critical error with full context
 logger.log()
     .event(.apiCall)
     .payload(["endpoint": "/users"])
     .critical()
     .error("Network request failed")
 
-// Masking sensitive data
+// Analytics with structured data
 logger.log()
-    .payload(["password": "secret123"])
-    .sensitive(keys: ["password"])
-    .info("User logged in")
+    .event("purchase")
+    .action("completed")
+    .payload(["item_id": "12345", "price": "9.99"])
+    .analytics("Purchase completed")
 
-// Adding source code location
+// Debug with source location
 logger.log()
     .source()
-    .debug("Variable value at this point")
+    .payload(["cache_key": "user_profile"])
+    .debug("Cache hit")
+// Automatically captures file, function, and line number
+
+// Sensitive data is masked by default (November 2025+)
+logger.log()
+    .payload(["password": "secret123", "username": "john"])
+    .info("User logged in")
+// Output: password=s***3, username=john
+```
+
+### Direct Methods API (Optional)
+
+For quick, simple logging without metadata:
+
+```swift
+// Simple messages
+logger.info("Application started")
+logger.warning("API rate limit approaching")
+logger.error("Network request failed")
+logger.debug("Cache hit")
+logger.analytics("Purchase completed")
+
+// With basic payload
+logger.info(
+    "User logged in",
+    payload: ["user_id": "123"]
+)
 ```
 
 ## License

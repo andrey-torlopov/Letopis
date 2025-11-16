@@ -1,4 +1,13 @@
-The `Log` builder provides a fluent interface for constructing log events.
+# Log Builder API (DSL) — Recommended
+
+The `Log` builder provides a fluent interface for constructing rich, structured log events with metadata. This is the **recommended approach** for most logging scenarios in Letopis.
+
+## Why Use the DSL?
+
+- **Expressive and readable** — Chain methods to build complex log events naturally
+- **Type-safe metadata** — Leverage protocol-based event types and actions
+- **Rich context** — Easily attach payloads, source location, and priority
+- **Flexible masking** — Fine-grained control over sensitive data
 
 ## Methods
 

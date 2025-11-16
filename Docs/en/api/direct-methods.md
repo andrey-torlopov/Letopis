@@ -1,4 +1,17 @@
-If the builder is overkill, call the facade methods directly.
+# Direct Logging Methods — Optional
+
+The direct methods API provides a simple, straightforward way to log messages without the ceremony of the builder pattern. Use this **optional approach** when you need quick logging without extensive metadata.
+
+## When to Use Direct Methods
+
+Direct methods are useful when:
+
+- You need to log a simple message quickly
+- You don't need extensive metadata or context
+- You're migrating from another logging system
+- Performance is critical (slightly less overhead than DSL)
+
+> **Note:** For most scenarios, the [Log Builder API (DSL)](log-builder.md) is recommended as it provides better structure and readability.
 
 ## Available Methods
 
@@ -92,15 +105,6 @@ logger.log(
 // Error logging
 logger.log(networkError, isCritical: true, event: "network")
 ```
-
-## When to Use Direct Methods
-
-Direct methods are useful when:
-
-- You need to log a simple message quickly
-- You don't need the flexibility of the builder
-- You're migrating from another logging system
-- Performance is critical (slightly less overhead)
 
 ---
 
