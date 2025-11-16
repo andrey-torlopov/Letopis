@@ -54,15 +54,40 @@ logger
     .info("Debug information with source location")
 ```
 
-### `sensitive()` / `sensitive(keys:strategy:)`
+### `sensitive(keys:strategy:)` / `sensitive(key:strategy:)`
 
-Enable masking for sensitive data in the payload.
+Apply custom masking strategies to specific keys in the payload.
+
+> **Note:** As of November 2025, masking is **enabled by default** for all globally configured sensitive keys. This method is used to apply custom strategies or mask additional keys not in the global list.
 
 ```swift
+// Apply custom strategies to specific keys
 logger
     .payload(["email": "user@example.com", "card": "1234-5678"])
-    .sensitive(keys: ["email", "card"])
+    .sensitive(key: "email", strategy: .email)
+    .sensitive(key: "card", strategy: .last4)
     .info("Payment processed")
+
+// Mask multiple keys with same strategy
+logger
+    .payload(["token": "abc123", "api_key": "xyz789"])
+    .sensitive(keys: ["token", "api_key"], strategy: .full)
+    .info("Auth completed")
+```
+
+### `notSensitive()`
+
+Disable automatic masking for this specific log event.
+
+> **Warning:** Use only in development/debugging. Production logs should keep default masking enabled.
+
+```swift
+// Disable masking to see raw values during debugging
+logger
+    .payload(["password": "secret123", "token": "abc123"])
+    .notSensitive()
+    .debug("Debug auth flow")
+// Output: password=secret123, token=abc123 (unmasked)
 ```
 
 ### Terminal Methods

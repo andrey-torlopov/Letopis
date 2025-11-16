@@ -140,8 +140,31 @@ func testEventCaching() async {
 
 ## Testing Sensitive Data Masking
 
+### Test Default Masking (November 2025+)
+
 ```swift
-func testSensitiveDataMasking() {
+func testSensitiveDataMaskingDefault() {
+    let spy = SpyInterceptor()
+    let logger = Letopis(
+        interceptors: [spy],
+        sensitiveKeys: ["password"]
+    )
+    
+    // Masking is enabled by default - no .sensitive() call needed
+    logger
+        .payload(["password": "secret123", "username": "john"])
+        .info("Login")
+    
+    let payload = spy.receivedEvents.first?.payload
+    XCTAssertEqual(payload?["password"] as? String, "s***3")
+    XCTAssertEqual(payload?["username"] as? String, "john")
+}
+```
+
+### Test Disabling Masking
+
+```swift
+func testDisableMasking() {
     let spy = SpyInterceptor()
     let logger = Letopis(
         interceptors: [spy],
@@ -149,13 +172,29 @@ func testSensitiveDataMasking() {
     )
     
     logger
-        .payload(["password": "secret123", "username": "john"])
-        .sensitive()
-        .info("Login")
+        .payload(["password": "secret123"])
+        .notSensitive()  // Explicitly disable masking
+        .info("Debug login")
     
     let payload = spy.receivedEvents.first?.payload
-    XCTAssertEqual(payload?["password"] as? String, "s***3")
-    XCTAssertEqual(payload?["username"] as? String, "john")
+    XCTAssertEqual(payload?["password"] as? String, "secret123") // Unmasked
+}
+```
+
+### Test Custom Masking Strategies
+
+```swift
+func testCustomMaskingStrategy() {
+    let spy = SpyInterceptor()
+    let logger = Letopis(interceptors: [spy])
+    
+    logger
+        .payload(["email": "user@example.com"])
+        .sensitive(key: "email", strategy: .email)
+        .info("User action")
+    
+    let payload = spy.receivedEvents.first?.payload
+    XCTAssertEqual(payload?["email"] as? String, "u***@example.com")
 }
 ```
 

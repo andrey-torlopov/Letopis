@@ -111,7 +111,9 @@ logger.info("Data processed", payload: ["count": data.count])
 
 ## Security
 
-### Always mask sensitive data
+### Configure sensitive keys globally
+
+As of November 2025, masking is **enabled by default** for all configured sensitive keys:
 
 ```swift
 let logger = Letopis(
@@ -119,10 +121,19 @@ let logger = Letopis(
     sensitiveKeys: ["password", "token", "api_key", "credit_card"]
 )
 
+// Masking happens automatically - no .sensitive() call needed
+logger
+    .payload(["password": "secret123", "username": "john"])
+    .info("User logged in")
+// Output: password=s***3, username=john ✅
+
+// Only disable masking in development/debugging
+#if DEBUG
 logger
     .payload(["password": "secret123"])
-    .sensitive()
-    .info("User logged in")
+    .notSensitive()
+    .debug("Debug auth flow")
+#endif
 ```
 
 ## Migration

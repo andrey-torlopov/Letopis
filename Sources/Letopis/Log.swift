@@ -22,7 +22,7 @@ public final class Log {
     internal var eventAction: String?
     internal var sourceInfo: SourceInfo?
     internal var customSensitiveKeys: [String: SensitiveDataStrategy] = [:]
-    internal var shouldUseSensitive: Bool = false
+    internal var shouldUseSensitive: Bool = true
 
     // MARK: - Initialization
 

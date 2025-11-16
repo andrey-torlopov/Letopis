@@ -2,6 +2,8 @@
 
 Letopis provides built-in support for masking sensitive information in log payloads to prevent accidental exposure of passwords, tokens, API keys, and other confidential data.
 
+> **Important:** As of November 2025, sensitive data masking is **enabled by default** for all globally configured sensitive keys. Use `.notSensitive()` to explicitly disable masking when needed.
+
 ## Masking Strategies
 
 Four masking strategies are available via `SensitiveDataStrategy`:
@@ -51,20 +53,42 @@ logger.addSensitiveKeys(["credit_card", "secret"])
 logger.removeSensitiveKeys(["api_key"])
 ```
 
-Global keys use the `.partial` strategy by default when masking is enabled.
+Global keys use the `.partial` strategy by default.
 
-## Per-Log Masking
+## Default Behavior (November 2025+)
 
-### Use Global Sensitive Keys
+**Masking is now enabled by default.** Any keys in the global `sensitiveKeys` list are automatically masked:
+
+```swift
+let logger = Letopis(
+    interceptors: [ConsoleInterceptor()],
+    sensitiveKeys: ["password", "token"]
+)
+
+// Masking happens automatically - no .sensitive() call needed
+logger.log()
+    .payload(["password": "secret123", "username": "john"])
+    .info("User logged in")
+
+// Output: password=s***3, username=john ✅ password is masked by default
+```
+
+### Disabling Masking
+
+Use `.notSensitive()` to explicitly disable masking for specific logs:
 
 ```swift
 logger.log()
-    .payload(["password": "secret123", "username": "john"])
-    .sensitive()  // Masks "password" using global list
-    .info("User logged in")
+    .payload(["password": "secret123", "token": "abc123"])
+    .notSensitive()  // Disable masking for this log only
+    .info("Debug authentication flow")
 
-// Output: password=s***3, username=john
+// Output: password=secret123, token=abc123 (shown in plain text)
 ```
+
+> **Warning:** Only use `.notSensitive()` in development/debugging scenarios. Production logs should keep default masking enabled.
+
+## Per-Log Masking
 
 ### Mask Specific Keys with Custom Strategies
 
@@ -91,8 +115,9 @@ logger.log()
 
 ## Important Notes
 
-- Masking only applies when `.sensitive()` is called on the log chain
-- Custom key strategies take precedence over global sensitive keys
+- **Masking is enabled by default** for all keys in the global `sensitiveKeys` list (as of November 2025)
+- Use `.notSensitive()` to explicitly disable masking for specific log events
+- Custom key strategies (via `.sensitive(keys:strategy:)`) take precedence over global sensitive keys
 - Masking happens before the event reaches interceptors
 - Source metadata (`source_file`, `source_function`, etc.) is never masked
 

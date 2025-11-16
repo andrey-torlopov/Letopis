@@ -67,11 +67,11 @@ public extension Log {
         return self
     }
 
-    /// Enables masking for all globally configured sensitive keys using partial strategy.
+    /// Disable masking for all globally configured sensitive keys using partial strategy.
     /// - Returns: Self for chaining.
     @discardableResult
-    func sensitive() -> Log {
-        shouldUseSensitive = true
+    func notSensitive() -> Log {
+        shouldUseSensitive = false
         return self
     }
 

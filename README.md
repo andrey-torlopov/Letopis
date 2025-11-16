@@ -30,6 +30,41 @@
 - **Flexible network traffic management** — smart buffering and prioritization
 - **Adaptation to external conditions** — dynamic configuration without changing the core
 
+## Changelog
+
+### November 2025
+
+**Breaking Change: Sensitive Data Masking**
+
+Sensitive data masking is now **enabled by default** to prevent accidental leakage of passwords, API keys, and other sensitive information in logs.
+
+- All keys configured in `sensitiveKeys` are automatically masked using the partial strategy
+- To disable masking for a specific log event, explicitly call `.notSensitive()`
+- Custom masking strategies can still be applied using `.sensitive(keys:strategy:)`
+
+**Before (old behavior):**
+```swift
+// Data was NOT masked by default
+logger.info("User logged in", payload: ["password": "secret123"])
+// Output: password: "secret123" ⚠️ EXPOSED
+```
+
+**After (new behavior):**
+```swift
+// Data is masked by default if key is in sensitiveKeys
+logger.info("User logged in", payload: ["password": "secret123"])
+// Output: password: "sec***23" ✅ PROTECTED
+
+// Explicitly disable masking when needed
+logger.log()
+    .payload(["password": "secret123"])
+    .notSensitive()
+    .info("Debug login flow")
+// Output: password: "secret123" (only when explicitly requested)
+```
+
+**Migration:** If you relied on sensitive data being visible in logs, add `.notSensitive()` to those specific log calls. For production code, we strongly recommend keeping the default behavior.
+
 ## Quick Start
 
 ```swift
