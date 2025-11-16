@@ -33,7 +33,7 @@ public final class Letopis: @unchecked Sendable {
     public init(interceptors: [LetopisInterceptor] = [], healthCheckInterval: TimeInterval = 30.0, sensitiveKeys: [String] = []) {
         self.healthTrackers = interceptors.map { InterceptorHealthTracker(interceptor: $0) }
         self.recoveryTimer = nil
-        self.sensitiveKeys = Set(sensitiveKeys)
+        self.sensitiveKeys = Set(sensitiveKeys.map { $0.lowercased() })
 
         // Start recovery timer after initialization if interval > 0
         if healthCheckInterval > 0 {
@@ -314,13 +314,13 @@ public final class Letopis: @unchecked Sendable {
     /// Adds sensitive keys to the global list
     /// - Parameter keys: Keys to add to the sensitive keys list
     public func addSensitiveKeys(_ keys: [String]) {
-        sensitiveKeys.formUnion(keys)
+        sensitiveKeys.formUnion(keys.map { $0.lowercased() })
     }
 
     /// Removes sensitive keys from the global list
     /// - Parameter keys: Keys to remove from the sensitive keys list
     public func removeSensitiveKeys(_ keys: [String]) {
-        sensitiveKeys.subtract(keys)
+        sensitiveKeys.subtract(keys.map { $0.lowercased() })
     }
 
     // MARK: - Internal Methods

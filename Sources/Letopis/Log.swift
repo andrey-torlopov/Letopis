@@ -147,12 +147,14 @@ public final class Log {
         var maskedPayload = payload
 
         for (key, value) in payload {
-            // Check if key has a custom strategy
-            if let strategy = customSensitiveKeys[key] {
+            let lowercasedKey = key.lowercased()
+
+            // Check if key has a custom strategy (case-insensitive)
+            if let strategy = customSensitiveKeys[lowercasedKey] {
                 maskedPayload[key] = strategy.mask(value)
             }
-            // Check if key is in global sensitive keys list
-            else if logger.sensitiveKeys.contains(key) {
+            // Check if key is in global sensitive keys list (case-insensitive)
+            else if logger.sensitiveKeys.contains(lowercasedKey) {
                 maskedPayload[key] = SensitiveDataStrategy.partial.mask(value)
             }
         }

@@ -84,7 +84,7 @@ public extension Log {
     func sensitive(keys: [String], strategy: SensitiveDataStrategy = .partial) -> Log {
         shouldUseSensitive = true
         for key in keys {
-            customSensitiveKeys[key] = strategy
+            customSensitiveKeys[key.lowercased()] = strategy
         }
         return self
     }
@@ -97,7 +97,7 @@ public extension Log {
     @discardableResult
     func sensitive(key: String, strategy: SensitiveDataStrategy = .partial) -> Log {
         shouldUseSensitive = true
-        customSensitiveKeys[key] = strategy
+        customSensitiveKeys[key.lowercased()] = strategy
         return self
     }
 

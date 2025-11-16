@@ -129,3 +129,88 @@ import Foundation
     #expect(messageCollector.messages.count == 1)
     #expect(messageCollector.messages.first?.contains("Visible error") == true)
 }
+
+@Test func sensitiveKeysCaseInsensitive() async throws {
+    actor SpyInterceptor: LetopisInterceptor {
+        var handledEvents: [LogEvent] = []
+
+        nonisolated var name: String { "SpyInterceptor" }
+
+        func handle(_ logEvent: LogEvent) async throws {
+            handledEvents.append(logEvent)
+        }
+
+        func health() async -> Bool {
+            return true
+        }
+
+        func getHandledEvents() -> [LogEvent] {
+            return handledEvents
+        }
+    }
+
+    let interceptor = SpyInterceptor()
+
+    // Test 1: Global sensitive keys should be case-insensitive
+    let logger1 = Letopis(interceptors: [interceptor], sensitiveKeys: ["password", "apikey"])
+
+    _ = logger1.log()
+        .payload([
+            "Password": "secret123",
+            "ApiKey": "key456",
+            "username": "user"
+        ])
+        .info("Test case-insensitive global keys")
+
+    // Ждем завершения асинхронных операций
+    try await Task.sleep(nanoseconds: 100_000_000)
+
+    let events1 = await interceptor.getHandledEvents()
+    let lastEvent1 = events1.last
+
+    #expect(lastEvent1?.payload["Password"]?.contains("***") == true)
+    #expect(lastEvent1?.payload["ApiKey"]?.contains("***") == true)
+    #expect(lastEvent1?.payload["username"] == "user")
+
+    // Test 2: Custom sensitive keys in DSL should be case-insensitive
+    let logger2 = Letopis(interceptors: [interceptor])
+
+    _ = logger2.log()
+        .sensitive(keys: ["token", "secret"], strategy: .full)
+        .payload([
+            "Token": "abc123",
+            "SECRET": "xyz789",
+            "data": "public"
+        ])
+        .info("Test case-insensitive custom keys")
+
+    try await Task.sleep(nanoseconds: 100_000_000)
+
+    let events2 = await interceptor.getHandledEvents()
+    let lastEvent2 = events2.last
+
+    #expect(lastEvent2?.payload["Token"] == "***")
+    #expect(lastEvent2?.payload["SECRET"] == "***")
+    #expect(lastEvent2?.payload["data"] == "public")
+
+    // Test 3: Adding sensitive keys dynamically should be case-insensitive
+    let logger3 = Letopis(interceptors: [interceptor])
+    logger3.addSensitiveKeys(["SessionId", "AuthToken"])
+
+    _ = logger3.log()
+        .payload([
+            "sessionid": "session123",
+            "AUTHTOKEN": "token456",
+            "userId": "123"
+        ])
+        .info("Test case-insensitive added keys")
+
+    try await Task.sleep(nanoseconds: 100_000_000)
+
+    let events3 = await interceptor.getHandledEvents()
+    let lastEvent3 = events3.last
+
+    #expect(lastEvent3?.payload["sessionid"]?.contains("***") == true)
+    #expect(lastEvent3?.payload["AUTHTOKEN"]?.contains("***") == true)
+    #expect(lastEvent3?.payload["userId"] == "123")
+}
