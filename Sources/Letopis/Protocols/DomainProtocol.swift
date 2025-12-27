@@ -12,3 +12,8 @@ public protocol DomainProtocol {
 extension DomainProtocol where Self: RawRepresentable, Self.RawValue == String {
     public var value: String { rawValue }
 }
+
+///// Allows String literals to be used as domains for convenience
+//extension String: DomainProtocol {
+//    // No need to implement value here - will be provided by shared extension
+//}
