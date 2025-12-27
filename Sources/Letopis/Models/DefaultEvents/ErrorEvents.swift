@@ -1,32 +1,29 @@
-/// Error event types for different error categories.
-public enum ErrorEventType: String, EventTypeProtocol, Sendable {
-    /// Data validation errors
-    case validation = "validation_error"
+/// Error domains for different error categories.
+public enum ErrorDomain: String, DomainProtocol, Sendable {
+    /// Data validation
+    case validation = "validation"
 
-    /// Network-related errors
-    case network = "network_error"
+    /// Network operations
+    case network = "network"
 
-    /// Data parsing/serialization errors
-    case parsing = "parsing_error"
+    /// Data parsing/serialization
+    case parsing = "parsing"
 
-    /// Business logic errors
-    case business = "business_error"
+    /// Business logic
+    case business = "business"
 
-    /// System-level errors
-    case system = "system_error"
+    /// System operations
+    case system = "system"
 
-    /// Authentication/authorization errors
-    case auth = "auth_error"
+    /// Authentication/authorization
+    case auth = "auth"
 
-    /// Database errors
-    case database = "database_error"
-
-    /// File system errors
-    case fileSystem = "file_system_error"
+    /// Database operations
+    case database = "database"
 }
 
 /// Error action types representing different error handling stages.
-public enum ErrorAction: String, EventActionProtocol, Sendable {
+public enum ErrorAction: String, ActionProtocol, Sendable {
     /// Error occurred
     case occurred = "occurred"
 

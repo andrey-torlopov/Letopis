@@ -16,10 +16,12 @@ public final class Log {
     // MARK: - Internal Properties
 
     internal let logger: Letopis
+    internal var purpose: LogPurpose = .operational
     internal var isCritical: Bool = false
     internal var payload: [String: String] = [:]
-    internal var eventType: String?
-    internal var eventAction: String?
+    internal var domain: String?
+    internal var action: String?
+    internal var correlationID: UUID?
     internal var sourceInfo: SourceInfo?
     internal var customSensitiveKeys: [String: SensitiveDataStrategy] = [:]
     internal var shouldUseSensitive: Bool = true
@@ -30,54 +32,62 @@ public final class Log {
         self.logger = logger
     }
 
-    // MARK: - Public Methods
+    // MARK: - Public Methods - Severity-based Logging
 
-    /// Creates and dispatches an informational log event.
-    /// - Parameter message: Descriptive message for the log.
-    /// - Returns: The created ``LogEvent``.
-    @discardableResult
-    public func info(_ message: String) -> LogEvent {
-        return createAndSendEvent(message: message, type: .info)
-    }
-
-    /// Creates and dispatches a warning log event.
-    /// - Parameter message: Descriptive message for the log.
-    /// - Returns: The created ``LogEvent``.
-    @discardableResult
-    public func warning(_ message: String) -> LogEvent {
-        return createAndSendEvent(message: message, type: .warning)
-    }
-
-    /// Creates and dispatches an error log event with a message.
-    /// - Parameter message: Descriptive message for the log.
-    /// - Returns: The created ``LogEvent``.
-    @discardableResult
-    public func error(_ message: String) -> LogEvent {
-        return createAndSendEvent(message: message, type: .error)
-    }
-
-    /// Creates and dispatches an error log event from an Error instance.
-    /// - Parameter error: Error to log.
-    /// - Returns: The created ``LogEvent``.
-    @discardableResult
-    public func error(_ error: Error) -> LogEvent {
-        return createAndSendEvent(message: error.localizedDescription, type: .error)
-    }
-
-    /// Creates and dispatches a debug log event.
+    /// Sends a debug-level log event.
     /// - Parameter message: Descriptive message for the log.
     /// - Returns: The created ``LogEvent``.
     @discardableResult
     public func debug(_ message: String) -> LogEvent {
-        return createAndSendEvent(message: message, type: .debug)
+        return createAndSendEvent(message: message, severity: .debug)
     }
 
-    /// Creates and dispatches an analytics log event.
+    /// Sends an info-level log event.
     /// - Parameter message: Descriptive message for the log.
     /// - Returns: The created ``LogEvent``.
     @discardableResult
-    public func analytics(_ message: String) -> LogEvent {
-        return createAndSendEvent(message: message, type: .analytics)
+    public func info(_ message: String) -> LogEvent {
+        return createAndSendEvent(message: message, severity: .info)
+    }
+
+    /// Sends a notice-level log event.
+    /// - Parameter message: Descriptive message for the log.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    public func notice(_ message: String) -> LogEvent {
+        return createAndSendEvent(message: message, severity: .notice)
+    }
+
+    /// Sends a warning-level log event.
+    /// - Parameter message: Descriptive message for the log.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    public func warning(_ message: String) -> LogEvent {
+        return createAndSendEvent(message: message, severity: .warning)
+    }
+
+    /// Sends an error-level log event.
+    /// - Parameter message: Descriptive message for the log.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    public func error(_ message: String) -> LogEvent {
+        return createAndSendEvent(message: message, severity: .error)
+    }
+
+    /// Sends an error-level log event from an Error instance.
+    /// - Parameter error: Error to log.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    public func error(_ error: Error) -> LogEvent {
+        return self.error(error.localizedDescription)
+    }
+
+    /// Sends a fault-level log event.
+    /// - Parameter message: Descriptive message for the log.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    public func fault(_ message: String) -> LogEvent {
+        return createAndSendEvent(message: message, severity: .fault)
     }
 
     // MARK: - Internal Methods
@@ -85,30 +95,42 @@ public final class Log {
     /// Sets the event type internally.
     /// - Parameter value: Event type string.
     /// - Returns: Self for chaining.
-    internal func setEventType(_ value: String) -> Log {
-        eventType = value
+    internal func setDomain(_ value: String) -> Log {
+        domain = value
         return self
     }
 
     /// Sets the event action internally.
     /// - Parameter value: Event action string.
     /// - Returns: Self for chaining.
-    internal func setEventAction(_ value: String) -> Log {
-        eventAction = value
+    internal func setAction(_ value: String) -> Log {
+        action = value
         return self
     }
 
     /// Creates a log event with accumulated metadata and dispatches it to interceptors.
     /// - Parameters:
     ///   - message: Log message.
-    ///   - type: Type of log event.
+    ///   - severity: Severity level of the event.
+    ///   - purpose: Purpose of the event (defaults to internal purpose property).
     /// - Returns: The created ``LogEvent``.
-    internal func createAndSendEvent(message: String, type: LogEventType) -> LogEvent {
+    internal func createAndSendEvent(
+        message: String,
+        severity: LogSeverity,
+        purpose: LogPurpose? = nil
+    ) -> LogEvent {
+        let domainValue = domain ?? DefaultDomain.empty.value
+        let actionValue = action ?? DefaultAction.empty.value
+
         let event = logger.createLogEvent(
             message,
-            type: type,
+            severity: severity,
+            purpose: purpose ?? self.purpose,
+            domain: domainValue,
+            action: actionValue,
             isCritical: isCritical,
-            payload: buildPayload()
+            payload: buildPayload(),
+            correlationID: correlationID
         )
         return event
     }
@@ -118,12 +140,12 @@ public final class Log {
     internal func buildPayload() -> [String: String] {
         var result = payload
 
-        if let eventType {
-            result["event_type"] = eventType
+        // Add legacy event_type and event_action for backward compatibility
+        if let domain {
+            result["domain"] = domain
         }
-
-        if let eventAction {
-            result["event_action"] = eventAction
+        if let action {
+            result["action"] = action
         }
 
         if let sourceInfo {

@@ -8,31 +8,35 @@ This guide will help you get started with Letopis in just a few minutes.
 import Letopis
 ```
 
-## Use built-in event types
+## Use built-in domains and actions
 
-Letopis provides ready-to-use event types for common scenarios:
+Letopis provides ready-to-use domains and actions for common scenarios:
 
 ```swift
-// Use built-in types
 import Letopis
 
-// UserEvents - for user interactions
-// NetworkEvents - for network requests
-// ErrorEvents - for error handling
+// Built-in domains:
+// - UserDomain: ui, input, navigation, gesture
+// - NetworkDomain: network, api, websocket
+// - ErrorDomain: validation, network, parsing, business, system, auth, database
+// - LifecycleDomain: screen, app, component, session
 
-// Or create your own custom types
-enum AppEventType: String, EventTypeProtocol {
-    case userAction = "user_action"
-    case apiCall = "api_call"
-    case error = "error"
-    case system = "system"
+// Built-in actions for each domain:
+// - UserAction: click, longPress, scroll, submit, swipeLeft, etc.
+// - NetworkAction: start, success, failure, retry, timeout, etc.
+// - ErrorAction: occurred, recovered, retrying, fatal, etc.
+// - LifecycleAction: willAppear, didAppear, willLoad, didLoad, etc.
+
+// You can also create your own custom domains and actions
+enum PaymentDomain: String, DomainProtocol {
+    case payment = "payment"
+    case subscription = "subscription"
 }
 
-// Actions
-enum AppEventAction: String, EventActionProtocol {
-    case view = "view"
-    case fetch = "fetch"
-    case networkFailure = "network_failure"
+enum PaymentAction: String, ActionProtocol {
+    case initiated = "initiated"
+    case completed = "completed"
+    case failed = "failed"
 }
 ```
 
@@ -44,102 +48,116 @@ Setup the logger with a console interceptor for development:
 private let logger = Letopis(
     interceptors: [
         ConsoleInterceptor(
-            // You can specify which events you want to explicitly listen to
-            // Otherwise, all events will be processed
-            logTypes: [.info, .error],
-            eventTypes: ["user_action", "api_call", "error"],
-            priorities: [.default, .critical]
+            // Filter by severity
+            severities: [.info, .error, .warning],
+            // Filter by purpose
+            purposes: [.operational, .analytics],
+            // Filter by domains (event types)
+            eventTypes: ["ui", "network", "payment"],
+            // Filter by actions
+            actions: ["click", "success", "failed"]
         )
-    ]
+    ],
+    // Configure global sensitive keys for automatic masking
+    sensitiveKeys: ["password", "token", "api_key", "ssn"]
 )
 ```
 
 ## Usage examples
 
-### Standard API (Recommended)
+### Direct Methods API (Quick and Simple)
 
-The primary way to log is using direct methods with optional parameters:
+For quick logging without metadata, use direct methods:
 
 ```swift
-// Simple info message
+// Simple messages
 logger.info("Application started")
+logger.warning("API rate limit approaching")
+logger.error("Failed to load user data")
+logger.debug("Internal cache updated")
 
-// With metadata
+// With basic payload
 logger.info(
     "User opened profile screen",
     payload: ["user_id": "12345", "screen": "profile"]
 )
 
-// With event type and action
+// With domain and action (using strings)
 logger.info(
     "User opened profile screen",
-    payload: ["user_id": "12345", "screen": "profile"],
-    eventType: AppEventType.userAction,
-    eventAction: AppEventAction.view
+    domain: "ui",
+    action: "screen_opened",
+    payload: ["screen": "profile"]
 )
 
-// Warning logs
-logger.warning(
-    "API rate limit approaching",
-    payload: ["remaining": "10", "limit": "100"]
-)
-
-// Error logs (critical by default)
-logger.error(
-    "Failed to load user data",
-    payload: ["error_code": "500", "retry_count": "3"],
-    eventType: AppEventType.error,
-    eventAction: AppEventAction.networkFailure
-)
-
-// Debug messages with source location
-logger.debug("Internal cache updated", includeSource: true)
-// Automatically adds file, function, and line number to the log
-
-// Analytics events
-logger.analytics(
-    "Purchase completed successfully",
-    payload: ["product_id": "premium_plan", "amount": "9.99"]
+// With protocol-based domain and action
+logger.info(
+    "API request completed",
+    domain: NetworkDomain.api,
+    action: NetworkAction.success,
+    payload: ["endpoint": "/users"]
 )
 ```
 
-### Optional DSL API
+### DSL API (Recommended for Rich Logging)
 
-For users who prefer a fluent, chainable syntax, the DSL API is available:
+For expressive, structured logging with metadata, use the fluent DSL:
 
 ```swift
-// Use built-in event types
+// Use built-in domains and actions
 logger.log()
-    .event(UserEvents.tap)
+    .domain(UserDomain.ui)
     .action(UserAction.click)
     .payload(["button": "submit", "screen": "profile"])
     .info("User clicked button")
 
 // Network request
 logger.log()
-    .event(NetworkEvents.http)
+    .domain(NetworkDomain.api)
     .action(NetworkAction.success)
     .payload(["endpoint": "/api/users"])
     .info("Request successful")
 
-// Logging with custom types
+// Lifecycle event
 logger.log()
-    .event(AppEventType.userAction)
-    .action(AppEventAction.view)
-    .payload(["user_id": "12345", "screen": "profile"])
-    .source() // Adds file and line information
-    .info("User opened profile screen")
+    .domain(LifecycleDomain.screen)
+    .action(LifecycleAction.didAppear)
+    .payload(["screen_name": "profile"])
+    .info("Screen appeared")
+
+// Logging with source location
+logger.log()
+    .domain(UserDomain.ui)
+    .action(UserAction.click)
+    .payload(["button": "checkout"])
+    .source() // Adds file, function, and line information
+    .info("User tapped checkout")
 
 // Logging critical errors
 logger.log()
-    .event(AppEventType.error)
-    .action(AppEventAction.networkFailure)
+    .domain(ErrorDomain.network)
+    .action(ErrorAction.fatal)
     .critical()
     .payload(["error_code": "500", "retry_count": "3"])
     .error("Failed to load user data")
+
+// String-based domains for custom events
+logger.log()
+    .domain("payment")
+    .action("completed")
+    .payload(["amount": "99.99", "currency": "USD"])
+    .info("Payment processed successfully")
+
+// Sensitive data masking (enabled by default)
+logger.log()
+    .domain("auth")
+    .action("login_success")
+    .payload(["user_id": "12345", "token": "abc123xyz"])
+    .info("User logged in")
+// Output: user_id=12345, token=a***z (token is masked automatically)
 ```
 
-**Note:** In this example, the console interceptor only shows info and error messages related to user actions, API calls, and errors. Debug messages and other event types are filtered out.
+**Note:** The console interceptor filters events based on configured severities, purposes, domains, and actions. Events that don't match the filters are ignored.
 
 ## Next steps
 

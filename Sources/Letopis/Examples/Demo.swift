@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Demo Event Types
 
 /// Screen actions for UI events
-public enum ScreenAction: String, EventActionProtocol, Sendable {
+public enum ScreenAction: String, ActionProtocol, Sendable {
     case open
     case close
     case error
@@ -196,8 +196,8 @@ struct NetworkScenarioDemo {
             let action: ScreenAction = (i % 5 == 0) ? .error : .open
 
             var log = logger
-                .event(eventType)
-                .action(action)
+                .domain(eventType.value)
+                .action(action.value)
 
             if isCritical {
                 log = log.critical()
@@ -223,7 +223,7 @@ struct LetopisDemo {
         print("")
 
         // Create logger with console output
-        let logger = Letopis(interceptors: [ConsoleInterceptor()])
+        let logger = Letopis(interceptors: [ConsoleInterceptor(severities: [.debug, .info, .notice, .warning, .error, .fault], printer: { print($0) })])
 
         // Add network interceptor with simulated server
         logger.addInterceptor(LogNetworkInterceptor(

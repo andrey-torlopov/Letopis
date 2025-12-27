@@ -17,7 +17,7 @@ A DTO that contains:
 - Message
 - Additional `payload` dictionary
 
-### `EventTypeProtocol` / `EventActionProtocol`
+### `EventTypeProtocol` / `ActionProtocol`
 Protocols for semantic event classifiers. You can create your own types that conform to these protocols.
 
 ### `LetopisInterceptor`

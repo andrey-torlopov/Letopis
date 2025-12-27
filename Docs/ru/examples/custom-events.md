@@ -7,7 +7,7 @@ enum CustomEventType: String, EventTypeProtocol {
     case featureFlag = "feature_flag"
 }
 
-enum CustomAction: String, EventActionProtocol {
+enum CustomAction: String, ActionProtocol {
     case enable = "enable"
     case disable = "disable"
     case refresh = "refresh"
@@ -34,7 +34,7 @@ enum EcommerceEventType: String, EventTypeProtocol {
     case payment = "payment"
 }
 
-enum EcommerceAction: String, EventActionProtocol {
+enum EcommerceAction: String, ActionProtocol {
     case view = "view"
     case add = "add"
     case remove = "remove"
@@ -70,7 +70,7 @@ enum ScreenEventType: String, EventTypeProtocol {
     case userInteraction = "user_interaction"
 }
 
-enum ScreenAction: String, EventActionProtocol {
+enum ScreenAction: String, ActionProtocol {
     case open = "open"
     case close = "close"
     case tap = "tap"

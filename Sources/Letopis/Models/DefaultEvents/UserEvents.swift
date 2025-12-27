@@ -1,26 +1,20 @@
-/// User interaction event types for UI elements and gestures.
-public enum UserEventType: String, EventTypeProtocol, Sendable {
-    /// Tap/click interactions
-    case tap = "user_tap"
+/// User interaction domains for UI elements and gestures.
+public enum UserDomain: String, DomainProtocol, Sendable {
+    /// User interface interactions
+    case ui = "ui"
 
-    /// Swipe gestures
-    case swipe = "user_swipe"
-
-    /// Text input events
+    /// User input and forms
     case input = "user_input"
 
-    /// Navigation events
+    /// User navigation
     case navigation = "user_navigation"
 
-    /// Form interactions
-    case form = "user_form"
-
-    /// Gesture events
+    /// User gestures
     case gesture = "user_gesture"
 }
 
 /// User action types representing different user interactions.
-public enum UserAction: String, EventActionProtocol, Sendable {
+public enum UserAction: String, ActionProtocol, Sendable {
     /// Single click/tap
     case click = "click"
 

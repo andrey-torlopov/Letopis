@@ -1,24 +1,22 @@
-## Пользовательские типы событий
+# Домены и действия
 
-# Типы событий и действий
+Letopis использует модель **домен + действие** для структурирования событий логирования. Домены представляют бизнес-области или подсистемы, а действия описывают конкретные операции внутри этих доменов.
 
-## Встроенные дефолтные типы
+## Встроенные домены и действия
 
-Letopis предоставляет набор готовых типов событий и действий для типичных сценариев:
+Letopis предоставляет готовые домены и действия для типичных сценариев:
 
-### UserEvents - События пользователя
+### UserDomain - Действия пользователя
 
 ```swift
-public enum UserEvents: String, EventTypeProtocol, Sendable {
-    case tap = "user_tap"
-    case swipe = "user_swipe"
+public enum UserDomain: String, DomainProtocol, Sendable {
+    case ui = "ui"
     case input = "user_input"
     case navigation = "user_navigation"
-    case form = "user_form"
     case gesture = "user_gesture"
 }
 
-public enum UserAction: String, EventActionProtocol, Sendable {
+public enum UserAction: String, ActionProtocol, Sendable {
     case click, longPress, doubleClick, scroll
     case typeText, submit
     case swipeLeft, swipeRight, swipeUp, swipeDown
@@ -26,108 +24,133 @@ public enum UserAction: String, EventActionProtocol, Sendable {
 }
 ```
 
-### NetworkEvents - Сетевые события
+### NetworkDomain - Сетевые операции
 
 ```swift
-public enum NetworkEvents: String, EventTypeProtocol, Sendable {
-    case http = "http_request"
-    case websocket = "websocket"
-    case graphql = "graphql"
-    case grpc = "grpc"
+public enum NetworkDomain: String, DomainProtocol, Sendable {
+    case network = "network"
     case api = "api"
+    case websocket = "websocket"
 }
 
-public enum NetworkAction: String, EventActionProtocol, Sendable {
+public enum NetworkAction: String, ActionProtocol, Sendable {
     case start, success, failure, retry, cancel, timeout
     case connected, disconnected
     case dataReceived, dataSent
 }
 ```
 
-### ErrorEvents - События ошибок
+### ErrorDomain - Обработка ошибок
 
 ```swift
-public enum ErrorEvents: String, EventTypeProtocol, Sendable {
-    case validation = "validation_error"
-    case network = "network_error"
-    case parsing = "parsing_error"
-    case business = "business_error"
-    case system = "system_error"
-    case auth = "auth_error"
-    case database = "database_error"
-    case fileSystem = "file_system_error"
+public enum ErrorDomain: String, DomainProtocol, Sendable {
+    case validation = "validation"
+    case network = "network"
+    case parsing = "parsing"
+    case business = "business"
+    case system = "system"
+    case auth = "auth"
+    case database = "database"
 }
 
-public enum ErrorAction: String, EventActionProtocol, Sendable {
+public enum ErrorAction: String, ActionProtocol, Sendable {
     case occurred, recovered, retrying, fatal
     case ignored, logged, handledByUser
 }
 ```
 
-### Пример использования дефолтных типов
+### LifecycleDomain - События жизненного цикла
+
+```swift
+public enum LifecycleDomain: String, DomainProtocol, Sendable {
+    case screen = "screen"
+    case app = "app"
+    case component = "component"
+    case session = "session"
+}
+
+public enum LifecycleAction: String, ActionProtocol, Sendable {
+    case willAppear, didAppear
+    case willDisappear, didDisappear
+    case willLoad, didLoad
+    case willDestroy, didDestroy
+}
+```
+
+### Использование встроенных доменов
 
 ```swift
 // Логирование действия пользователя
-logger
-    .event(UserEvents.tap)
+logger.log()
+    .domain(UserDomain.ui)
     .action(UserAction.click)
     .payload(["button": "submit"])
     .info("Пользователь нажал кнопку")
 
 // Логирование сетевого запроса
-logger
-    .event(NetworkEvents.http)
+logger.log()
+    .domain(NetworkDomain.api)
     .action(NetworkAction.success)
     .payload(["endpoint": "/api/users"])
     .info("Запрос выполнен успешно")
 
 // Логирование ошибки
-logger
-    .event(ErrorEvents.network)
+logger.log()
+    .domain(ErrorDomain.network)
     .action(ErrorAction.retrying)
     .critical()
     .error("Ошибка подключения")
+
+// Логирование события жизненного цикла
+logger.log()
+    .domain(LifecycleDomain.screen)
+    .action(LifecycleAction.didAppear)
+    .payload(["screen_name": "profile"])
+    .info("Экран отобразился")
 ```
 
-## Пользовательские типы событий
+## Пользовательские домены и действия
 
-Вы также можете создавать собственные типы событий, соответствуя протоколам:
+Вы можете создавать собственные домены и действия, соответствуя протоколам:
 
 ```swift
-enum CustomEventType: String, EventTypeProtocol {
-    case authentication = "auth"
-    case dataSync = "data_sync"
-    case featureFlag = "feature_flag"
+// Определите пользовательский домен
+enum PaymentDomain: String, DomainProtocol {
+    case payment = "payment"
+    case subscription = "subscription"
+    case billing = "billing"
 }
 
-enum CustomAction: String, EventActionProtocol {
-    case enable = "enable"
-    case disable = "disable"
-    case refresh = "refresh"
+// Определите пользовательские действия
+enum PaymentAction: String, ActionProtocol {
+    case initiated = "initiated"
+    case processing = "processing"
+    case completed = "completed"
+    case failed = "failed"
+    case refunded = "refunded"
 }
 ```
 
-## Использование пользовательских типов
+## Использование пользовательских доменов и действий
 
 ```swift
-logger
-    .event(CustomEventType.authentication)
-    .action(CustomAction.enable)
-    .info("Двухфакторная аутентификация включена")
+logger.log()
+    .domain(PaymentDomain.payment)
+    .action(PaymentAction.completed)
+    .payload(["amount": "99.99", "currency": "USD"])
+    .info("Платеж выполнен успешно")
 ```
 
-## Пример: Действия экрана
+## Строковые домены и действия
+
+Для быстрого прототипирования или простых случаев можно использовать строки напрямую:
 
 ```swift
-public enum ScreenAction: String, EventActionProtocol, Sendable {
-    case open
-    case close
-}
-
-public enum AppEventType: String, EventTypeProtocol, Sendable {
-    case uiAction = "ui_action"
-    case businessLogic = "business_logic"
-}
+logger.log()
+    .domain("auth")
+    .action("login_success")
+    .payload(["user_id": "12345"])
+    .info("Пользователь вошел в систему")
 ```
 
 ## Лучшие практики

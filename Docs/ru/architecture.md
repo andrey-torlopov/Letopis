@@ -17,7 +17,7 @@ DTO, содержащее:
 - Сообщение
 - Дополнительный словарь `payload`
 
-### `EventTypeProtocol` / `EventActionProtocol`
+### `EventTypeProtocol` / `ActionProtocol`
 Протоколы для семантических классификаторов событий. Вы можете создать собственные типы, соответствующие этим протоколам.
 
 ### `LetopisInterceptor`

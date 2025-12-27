@@ -58,10 +58,12 @@ final class HealthCheckTests: XCTestCase {
         for i in 1...5 {
             do {
                 try await networkInterceptor.handle(LogEvent(
-                    type: .info,
-                    isCritical: false,
+                    severity: .info,
+                    domain: "test",
+                    action: "test_action",
                     message: "Test message \(i)",
-                    payload: [:]
+                    payload: [:],
+                    isCritical: false
                 ))
             } catch {
                 // Expected to fail

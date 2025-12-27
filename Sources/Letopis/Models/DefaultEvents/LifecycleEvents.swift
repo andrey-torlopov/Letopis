@@ -1,20 +1,20 @@
-/// Lifecycle event types for screens, components, and application states.
-public enum LifecycleEventType: String, EventTypeProtocol, Sendable {
-    /// Screen-level lifecycle events (view controllers, screens)
-    case screen = "screen_lifecycle"
+/// Lifecycle domains for screens, components, and application states.
+public enum LifecycleDomain: String, DomainProtocol, Sendable {
+    /// Screen-level lifecycle events
+    case screen = "screen"
 
-    /// Application-level lifecycle events (app state changes)
-    case app = "app_lifecycle"
+    /// Application-level lifecycle events
+    case app = "app"
 
-    /// Component-level lifecycle events (custom components, views)
-    case component = "component_lifecycle"
+    /// Component-level lifecycle events
+    case component = "component"
 
-    /// Session-level lifecycle events (user sessions)
-    case session = "session_lifecycle"
+    /// Session-level lifecycle events
+    case session = "session"
 }
 
 /// Lifecycle action types representing different stages of an object's lifetime.
-public enum LifecycleAction: String, EventActionProtocol, Sendable {
+public enum LifecycleAction: String, ActionProtocol, Sendable {
     /// Object is about to appear/start
     case willAppear = "will_appear"
 

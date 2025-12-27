@@ -31,7 +31,7 @@ logger
 ## With Actions
 
 ```swift
-enum AppEventAction: String, EventActionProtocol {
+enum AppEventAction: String, ActionProtocol {
     case view = "view"
     case fetch = "fetch"
     case networkFailure = "network_failure"

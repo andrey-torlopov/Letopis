@@ -23,46 +23,55 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     public var name: String { "ConsoleInterceptor" }
 
     private let logTypes: Set<LogEventType>?
+    private let severities: Set<LogSeverity>?
+    private let purposes: Set<LogPurpose>?
     private let criticalOnly: Bool
     private let eventTypes: Set<String>?
     private let actions: Set<String>?
     private let sourceFiles: Set<String>?
     private let printer: Printer
     private let logger: Logger?
-    private let useOSLog: Bool
+    private let subsystem: String?
+    private let useDomainAsCategory: Bool
 
-    /// Creates a console interceptor using raw string filters.
+    /// Creates a console interceptor with severity-based filtering.
     /// - Parameters:
-    ///   - logTypes: Accepted log event types.
+    ///   - severities: Accepted severity levels. If nil, all severities are accepted.
+    ///   - purposes: Accepted purposes. If nil, all purposes are accepted.
     ///   - criticalOnly: If `true`, only critical events are logged. Defaults to `false`.
-    ///   - eventTypes: Accepted event types extracted from payload.
-    ///   - actions: Accepted event actions extracted from payload.
+    ///   - eventTypes: Accepted event types (domains).
+    ///   - actions: Accepted event actions.
     ///   - sourceFiles: Accepted source file names from payload metadata.
-    ///   - useOSLog: Whether to use OSLog instead of print. Defaults to `false`.
-    ///   - subsystem: OSLog subsystem identifier. Required when `useOSLog` is `true`.
-    ///   - category: OSLog category. Defaults to "Letopis".
-    ///   - printer: Closure that outputs a formatted message. Defaults to ``Swift/print(_:)``. Ignored when `useOSLog` is `true`.
+    ///   - subsystem: OSLog subsystem identifier. If provided, OSLog is used instead of print. If nil, falls back to print. Defaults to `nil`.
+    ///   - useDomainAsCategory: If true and subsystem is provided, uses event.domain as OSLog category. Defaults to `true`.
+    ///   - defaultCategory: Default OSLog category when useDomainAsCategory is false and subsystem is provided. Defaults to "Letopis".
+    ///   - printer: Closure that outputs a formatted message. Defaults to ``Swift/print(_:)``. Ignored when subsystem is provided.
     public init(
-        logTypes: [LogEventType]? = nil,
+        severities: [LogSeverity]? = nil,
+        purposes: [LogPurpose]? = nil,
         criticalOnly: Bool = false,
         eventTypes: [String]? = nil,
         actions: [String]? = nil,
         sourceFiles: [String]? = nil,
-        useOSLog: Bool = false,
         subsystem: String? = nil,
-        category: String = "Letopis",
-        printer: @escaping Printer = { print($0) }
+        useDomainAsCategory: Bool = true,
+        defaultCategory: String = "Letopis",
+        printer: @escaping Printer = { Swift.print($0) }
     ) {
-        self.logTypes = ConsoleInterceptor.normalize(logTypes)
+        self.logTypes = nil
+        self.severities = ConsoleInterceptor.normalize(severities)
+        self.purposes = ConsoleInterceptor.normalize(purposes)
         self.criticalOnly = criticalOnly
         self.eventTypes = ConsoleInterceptor.normalize(eventTypes)
         self.actions = ConsoleInterceptor.normalize(actions)
         self.sourceFiles = ConsoleInterceptor.normalize(sourceFiles)
-        self.useOSLog = useOSLog
+        self.subsystem = subsystem
+        self.useDomainAsCategory = useDomainAsCategory
         self.printer = printer
 
-        if useOSLog, let subsystem = subsystem {
-            self.logger = Logger(subsystem: subsystem, category: category)
+        // For non-domain-based category, create logger upfront when subsystem is provided
+        if !useDomainAsCategory, let subsystem = subsystem {
+            self.logger = Logger(subsystem: subsystem, category: defaultCategory)
         } else {
             self.logger = nil
         }
@@ -73,8 +82,8 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     public func handle(_ logEvent: LogEvent) async throws {
         guard shouldHandle(logEvent) else { return }
 
-        if useOSLog, let logger = logger {
-            logWithOSLog(logEvent, logger: logger)
+        if subsystem != nil {
+            logWithOSLog(logEvent)
         } else {
             let formattedMessage = format(logEvent)
             await LoggingActor.shared.print(formattedMessage, using: printer)
@@ -87,33 +96,46 @@ public final class ConsoleInterceptor: LetopisInterceptor {
         return true
     }
 
-    /// Logs an event using OSLog.
-    /// - Parameters:
-    ///   - event: Event to log.
-    ///   - logger: Logger instance to use.
-    private func logWithOSLog(_ event: LogEvent, logger: Logger) {
-        let osLogLevel = mapToOSLogLevel(event.type, isCritical: event.isCritical)
+    /// Logs an event using OSLog with appropriate subsystem and category.
+    ///
+    /// The category is determined by `useDomainAsCategory`:
+    /// - If `true`: uses `event.domain` as category (e.g., "auth", "network", "ui")
+    /// - If `false`: uses the default category specified in init
+    ///
+    /// Using domain as category allows filtering logs by business area in Console.app:
+    /// - `subsystem:com.app category:auth` - all authentication logs
+    /// - `subsystem:com.app category:network` - all network logs
+    ///
+    /// - Parameter event: Event to log.
+    private func logWithOSLog(_ event: LogEvent) {
+        guard let subsystem = subsystem else {
+            // This shouldn't happen as we check subsystem in handle(), but provide fallback
+            let formattedMessage = format(event)
+            let currentPrinter = printer
+            Task {
+                await LoggingActor.shared.print(formattedMessage, using: currentPrinter)
+            }
+            return
+        }
+
+        // Determine the logger to use based on configuration
+        let effectiveLogger: Logger
+        if useDomainAsCategory {
+            // Create a logger with domain as category for better log organization
+            // This allows filtering by business domain in Console.app
+            effectiveLogger = Logger(subsystem: subsystem, category: event.domain)
+        } else if let logger = logger {
+            // Use pre-created logger with default category
+            effectiveLogger = logger
+        } else {
+            // Shouldn't happen, but fallback to default category
+            effectiveLogger = Logger(subsystem: subsystem, category: "Letopis")
+        }
+
+        let osLogLevel = event.severity.osLogType
         let message = formatForOSLog(event)
 
-        logger.log(level: osLogLevel, "\(message)")
-    }
-
-    /// Maps Letopis event type to OSLog level.
-    /// - Parameters:
-    ///   - type: Letopis log event type.
-    ///   - isCritical: Whether the event is marked as critical priority.
-    /// - Returns: Corresponding OSLog level.
-    private func mapToOSLogLevel(_ type: LogEventType, isCritical: Bool) -> OSLogType {
-        switch type {
-        case .debug:
-            return .debug
-        case .info, .analytics:
-            return .info
-        case .warning:
-            return isCritical ? .error : .default
-        case .error:
-            return isCritical ? .fault : .error
-        }
+        effectiveLogger.log(level: osLogLevel, "\(message)")
     }
 
     /// Formats the log event for OSLog output.
@@ -122,9 +144,23 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     private func formatForOSLog(_ event: LogEvent) -> String {
         var parts: [String] = []
 
-        parts.append("\(event.type.rawValue) \(event.criticalityIcon)")
+        // Add severity and criticality icons
+        parts.append("\(event.severity.rawValue) \(event.purpose.rawValue) \(event.criticalityIcon)")
+
+        // Add eventID if available
+        if !event.eventID.isEmpty && event.eventID != "app.event" {
+            parts.append("[\(event.eventID)]")
+        }
+
+        // Add message
         parts.append(event.message)
 
+        // Add correlation ID if present
+        if let correlationID = event.correlationID {
+            parts.append("[correlation: \(correlationID.uuidString)]")
+        }
+
+        // Add payload metadata
         if !event.payload.isEmpty {
             let sourceFile = event.payload["source_file"]
             let sourceFunction = event.payload["source_function"]
@@ -132,6 +168,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
 
             let filteredPayload = event.payload.filter {
                 $0.key != "source_file" && $0.key != "source_function" && $0.key != "source_line"
+                    && $0.key != "domain" && $0.key != "action"
             }
 
             if let file = sourceFile, let function = sourceFunction, let line = sourceLine {
@@ -154,25 +191,38 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     /// - Parameter event: Event to evaluate.
     /// - Returns: ``true`` if the event should be handled, otherwise ``false``.
     private func shouldHandle(_ event: LogEvent) -> Bool {
-        #if !DEBUG
-        return false
-        #endif
+        // Check severity filter
+        if let severities, !severities.contains(event.severity) { return false }
 
-        if let logTypes, !logTypes.contains(event.type) { return false }
+        // Check purpose filter (new)
+        if let purposes, !purposes.contains(event.purpose) { return false }
+
+
+
         if criticalOnly && !event.isCritical { return false }
 
+        // Check domain filter (prefer direct property over payload)
         if let eventTypes {
-            guard
-                let value = event.payload["event_type"],
-                eventTypes.contains(value)
-            else { return false }
+            if !eventTypes.contains(event.domain) {
+                // Fallback to payload for backward compatibility
+                if let value = event.payload["event_type"], !eventTypes.contains(value) {
+                    return false
+                } else if event.payload["event_type"] == nil {
+                    return false
+                }
+            }
         }
 
+        // Check action filter (prefer direct property over payload)
         if let actions {
-            guard
-                let value = event.payload["event_action"],
-                actions.contains(value)
-            else { return false }
+            if !actions.contains(event.action) {
+                // Fallback to payload for backward compatibility
+                if let value = event.payload["event_action"], !actions.contains(value) {
+                    return false
+                } else if event.payload["event_action"] == nil {
+                    return false
+                }
+            }
         }
 
         if let sourceFiles {
@@ -199,7 +249,21 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     private func format(_ event: LogEvent) -> String {
         var parts: [String] = []
 
-        parts.append("\(event.type.rawValue) \(event.criticalityIcon) \(event.message)")
+        // Add severity, purpose and criticality icons
+        parts.append("\(event.severity.rawValue) \(event.purpose.rawValue) \(event.criticalityIcon)")
+
+        // Add eventID if available
+        if !event.eventID.isEmpty && event.eventID != "app.event" {
+            parts.append("[\(event.eventID)]")
+        }
+
+        // Add message
+        parts.append(event.message)
+
+        // Add correlation ID if present
+        if let correlationID = event.correlationID {
+            parts.append("[correlation: \(correlationID.uuidString)]")
+        }
 
         if !event.payload.isEmpty {
             // Extract source information
@@ -207,9 +271,10 @@ public final class ConsoleInterceptor: LetopisInterceptor {
             let sourceFunction = event.payload["source_function"]
             let sourceLine = event.payload["source_line"]
 
-            // Filter out source keys from payload
+            // Filter out source keys and event metadata from payload
             let filteredPayload = event.payload.filter {
                 $0.key != "source_file" && $0.key != "source_function" && $0.key != "source_line"
+                    && $0.key != "event_type" && $0.key != "event_action"
             }
 
             // Add source info if present

@@ -8,7 +8,7 @@ When creating a package with Letopis as a dependency, define domain-specific eve
 import Letopis
 import Foundation
 
-public enum ScreenAction: String, EventActionProtocol, Sendable {
+public enum ScreenAction: String, ActionProtocol, Sendable {
     case open
     case close
 }

@@ -11,24 +11,53 @@ The `Log` builder provides a fluent interface for constructing rich, structured 
 
 ## Methods
 
-### `action(_:)`
+### `domain(_:)`
 
-Set the semantic action for the event.
+Set the business domain or subsystem for the event.
 
-- Accepts any type conforming to `EventActionProtocol` or a string literal
+- Accepts any type conforming to `DomainProtocol` or a string literal
 
 ```swift
-logger.action("user_click").info("Button pressed")
+logger.log()
+    .domain(NetworkDomain.api)
+    .info("API request started")
+
+// Or with string
+logger.log()
+    .domain("auth")
+    .info("Authentication event")
 ```
 
-### `event(_:)`
+### `action(_:)`
 
-Set the event type.
+Set the specific action within the domain.
 
-- Accepts any type conforming to `EventTypeProtocol` or a string literal
+- Accepts any type conforming to `ActionProtocol` or a string literal
 
 ```swift
-logger.event(AppEventType.userAction).info("Screen opened")
+logger.log()
+    .action(NetworkAction.success)
+    .info("Request successful")
+
+// Or with string
+logger.log()
+    .action("login_success")
+    .info("User logged in")
+```
+
+### `event(domain:action:)`
+
+Set both domain and action together.
+
+```swift
+logger.log()
+    .event(domain: NetworkDomain.api, action: NetworkAction.start)
+    .info("API call initiated")
+
+// Or with strings
+logger.log()
+    .event(domain: "payment", action: "completed")
+    .info("Payment processed")
 ```
 
 ### `payload(_:)`
@@ -123,25 +152,33 @@ logger.event(.analytics).analytics("Purchase completed")
 // Simple log
 logger.log().info("App started")
 
-// With event type and action
-logger
-    .event("user_action")
-    .action("button_tap")
+// With domain and action
+logger.log()
+    .domain(UserDomain.ui)
+    .action(UserAction.click)
     .info("User tapped checkout button")
 
 // Critical error with source info
-logger
-    .event("payment")
+logger.log()
+    .domain("payment")
+    .action("timeout")
     .source()
     .critical()
     .error("Payment gateway timeout")
 
-// Analytics with payload
-logger
-    .event("purchase")
+// With payload
+logger.log()
+    .domain("purchase")
     .action("completed")
     .payload(["amount": "99.99", "currency": "USD"])
-    .analytics("Purchase successful")
+    .info("Purchase successful")
+
+// Using built-in domains
+logger.log()
+    .domain(NetworkDomain.api)
+    .action(NetworkAction.success)
+    .payload(["endpoint": "/users"])
+    .info("API request completed")
 ```
 
 ---

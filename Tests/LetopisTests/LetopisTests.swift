@@ -3,34 +3,34 @@ import Foundation
 @testable import Letopis
 
 @Test func logEventCreation() async throws {
-    enum TestEvent: String, EventTypeProtocol { case someEvent = "some_event" }
-    enum TestAction: String, EventActionProtocol { case open = "open" }
+    enum TestEvent: String, DomainProtocol { case someEvent = "some_event" }
+    enum TestAction: String, ActionProtocol { case open = "open" }
 
     let logger = Letopis()
     let payload: [String: String] = ["Key": "Value"]
 
     let event = logger.info(
         "Test message",
+        domain: TestEvent.someEvent,
+        action: TestAction.open,
         isCritical: true,
-        payload: payload,
-        eventType: TestEvent.someEvent,
-        eventAction: TestAction.open
+        payload: payload
     )
 
     #expect(event.message == "Test message")
-    #expect(event.type == LogEventType.info)
+    #expect(event.severity == .info)
     #expect(event.isCritical == true)
     #expect(event.payload["Key"] == "Value")
-    #expect(event.payload["event_type"] == TestEvent.someEvent.rawValue)
-    #expect(event.payload["event_action"] == TestAction.open.rawValue)
+    #expect(event.domain == TestEvent.someEvent.rawValue)
+    #expect(event.action == TestAction.open.rawValue)
 }
 
 @Test func interceptorsReceiveEvents() async throws {
-    enum TestEventType: String, EventTypeProtocol {
+    enum TestEventType: String, DomainProtocol {
         case analytics = "analytics"
         case userAction = "user_action"
     }
-    enum TestEventAction: String, EventActionProtocol {
+    enum TestEventAction: String, ActionProtocol {
         case view = "view"
     }
 
@@ -56,7 +56,7 @@ import Foundation
     let logger = Letopis()
     logger.addInterceptor(interceptor)
 
-    let directEvent = logger.info("Intercepted info", eventType: TestEventType.analytics)
+    let directEvent = logger.info("Intercepted info", domain: TestEventType.analytics, action: TestEventAction.view)
 
     // Ждем завершения асинхронных операций
     try await Task.sleep(nanoseconds: 100_000_000) // 0.1 секунда
@@ -67,11 +67,11 @@ import Foundation
 }
 
 @Test func consoleInterceptorFiltersEvents() async throws {
-    enum TestEventType: String, EventTypeProtocol {
+    enum TestEventType: String, DomainProtocol {
         case error = "error"
         case analytics = "analytics"
     }
-    enum TestEventAction: String, EventActionProtocol {
+    enum TestEventAction: String, ActionProtocol {
         case view = "view"
         case purchase = "purchase"
     }
@@ -96,7 +96,7 @@ import Foundation
     let messageCollector = MessageCollector()
 
     let consoleInterceptor = ConsoleInterceptor(
-        logTypes: [.error],
+        severities: [.error],
         criticalOnly: true,
         eventTypes: ["error"],
         actions: ["view"],

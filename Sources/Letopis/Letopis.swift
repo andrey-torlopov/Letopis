@@ -29,7 +29,7 @@ public final class Letopis: @unchecked Sendable {
     /// - Parameters:
     ///   - interceptors: Initial list of interceptors that will handle log events.
     ///   - healthCheckInterval: Interval in seconds between health checks for failed interceptors. Defaults to 30.0 seconds. Set to 0 to disable automatic health checks.
-    ///   - sensitiveKeys: Global list of keys that should be masked in all log payloads.
+    ///   - sensitiveKeys: Global list of keys that should be masked in all log payloads (case-insensitive).
     public init(interceptors: [LetopisInterceptor] = [], healthCheckInterval: TimeInterval = 30.0, sensitiveKeys: [String] = []) {
         self.healthTrackers = interceptors.map { InterceptorHealthTracker(interceptor: $0) }
         self.recoveryTimer = nil
@@ -58,243 +58,37 @@ public final class Letopis: @unchecked Sendable {
         healthTrackers.append(tracker)
     }
 
-    /// Creates an informational log event.
+    /// Creates and sends a log event with all parameters specified directly.
     /// - Parameters:
-    ///   - message: Descriptive message to log.
+    ///   - message: Message for the log event.
+    ///   - severity: Severity level of the event.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - domain: Business domain or subsystem. Defaults to "app".
+    ///   - action: Specific action within the domain. Defaults to "event".
     ///   - isCritical: Whether the event is critical. Defaults to `false`.
-    ///   - payload: Additional metadata for the event.
-    ///   - eventType: Optional high-level classification of the event.
-    ///   - eventAction: Optional action performed during the event.
-    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
-    ///   - file: Source file path (automatically captured).
-    ///   - function: Function name (automatically captured).
-    ///   - line: Line number (automatically captured).
-    /// - Returns: Created ``LogEvent`` instance.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
     @discardableResult
-    public func info(
+    public func logEvent(
         _ message: String,
+        severity: LogSeverity,
+        purpose: LogPurpose = .operational,
+        domain: DomainProtocol,
+        action: ActionProtocol,
         isCritical: Bool = false,
-        payload: [String: String]? = nil,
-        eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil,
-        includeSource: Bool = false,
-        file: String = #file,
-        function: String = #function,
-        line: Int = #line
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
     ) -> LogEvent {
-        createLogEvent(
+        return createLogEvent(
             message,
-            type: .info,
+            severity: severity,
+            purpose: purpose,
+            domain: domain,
+            action: action,
             isCritical: isCritical,
-            payload: combinePayload(
-                payload: payload,
-                eventType: eventType,
-                eventAction: eventAction,
-                includeSource: includeSource,
-                file: file,
-                function: function,
-                line: line
-            )
-        )
-    }
-
-    /// Creates a warning log event.
-    /// - Parameters:
-    ///   - message: Descriptive message to log.
-    ///   - isCritical: Whether the event is critical. Defaults to `false`.
-    ///   - payload: Additional metadata for the event.
-    ///   - eventType: Optional high-level classification of the event.
-    ///   - eventAction: Optional action performed during the event.
-    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
-    ///   - file: Source file path (automatically captured).
-    ///   - function: Function name (automatically captured).
-    ///   - line: Line number (automatically captured).
-    /// - Returns: Created ``LogEvent`` instance.
-    @discardableResult
-    public func warning(
-        _ message: String,
-        isCritical: Bool = false,
-        payload: [String: String]? = nil,
-        eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil,
-        includeSource: Bool = false,
-        file: String = #file,
-        function: String = #function,
-        line: Int = #line
-    ) -> LogEvent {
-        createLogEvent(
-            message,
-            type: .warning,
-            isCritical: isCritical,
-            payload: combinePayload(
-                payload: payload,
-                eventType: eventType,
-                eventAction: eventAction,
-                includeSource: includeSource,
-                file: file,
-                function: function,
-                line: line
-            )
-        )
-    }
-
-    /// Creates an error log event from a descriptive message.
-    /// - Parameters:
-    ///   - message: Descriptive message to log.
-    ///   - isCritical: Whether the event is critical. Defaults to `true`.
-    ///   - payload: Additional metadata for the event.
-    ///   - eventType: Optional high-level classification of the event.
-    ///   - eventAction: Optional action performed during the event.
-    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
-    ///   - file: Source file path (automatically captured).
-    ///   - function: Function name (automatically captured).
-    ///   - line: Line number (automatically captured).
-    /// - Returns: Created ``LogEvent`` instance.
-    @discardableResult
-    public func error(
-        _ message: String,
-        isCritical: Bool = true,
-        payload: [String: String]? = nil,
-        eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil,
-        includeSource: Bool = false,
-        file: String = #file,
-        function: String = #function,
-        line: Int = #line
-    ) -> LogEvent {
-        createLogEvent(
-            message,
-            type: .error,
-            isCritical: isCritical,
-            payload: combinePayload(
-                payload: payload,
-                eventType: eventType,
-                eventAction: eventAction,
-                includeSource: includeSource,
-                file: file,
-                function: function,
-                line: line
-            )
-        )
-    }
-
-    /// Creates an error log event from an ``Error`` instance.
-    /// - Parameters:
-    ///   - error: Error to log.
-    ///   - isCritical: Whether the event is critical. Defaults to `true`.
-    ///   - payload: Additional metadata for the event.
-    ///   - eventType: Optional high-level classification of the event.
-    ///   - eventAction: Optional action performed during the event.
-    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
-    ///   - file: Source file path (automatically captured).
-    ///   - function: Function name (automatically captured).
-    ///   - line: Line number (automatically captured).
-    /// - Returns: Created ``LogEvent`` instance.
-    @discardableResult
-    public func error(
-        _ error: Error,
-        isCritical: Bool = true,
-        payload: [String: String]? = nil,
-        eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil,
-        includeSource: Bool = false,
-        file: String = #file,
-        function: String = #function,
-        line: Int = #line
-    ) -> LogEvent {
-        createLogEvent(
-            error.localizedDescription,
-            type: .error,
-            isCritical: isCritical,
-            payload: combinePayload(
-                payload: payload,
-                eventType: eventType,
-                eventAction: eventAction,
-                includeSource: includeSource,
-                file: file,
-                function: function,
-                line: line
-            )
-        )
-    }
-
-    /// Creates a debug log event.
-    /// - Parameters:
-    ///   - message: Descriptive message to log.
-    ///   - isCritical: Whether the event is critical. Defaults to `false`.
-    ///   - payload: Additional metadata for the event.
-    ///   - eventType: Optional high-level classification of the event.
-    ///   - eventAction: Optional action performed during the event.
-    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
-    ///   - file: Source file path (automatically captured).
-    ///   - function: Function name (automatically captured).
-    ///   - line: Line number (automatically captured).
-    /// - Returns: Created ``LogEvent`` instance.
-    @discardableResult
-    public func debug(
-        _ message: String,
-        isCritical: Bool = false,
-        payload: [String: String]? = nil,
-        eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil,
-        includeSource: Bool = false,
-        file: String = #file,
-        function: String = #function,
-        line: Int = #line
-    ) -> LogEvent {
-        createLogEvent(
-            message,
-            type: .debug,
-            isCritical: isCritical,
-            payload: combinePayload(
-                payload: payload,
-                eventType: eventType,
-                eventAction: eventAction,
-                includeSource: includeSource,
-                file: file,
-                function: function,
-                line: line
-            )
-        )
-    }
-
-    /// Creates an analytics log event intended for analytics services.
-    /// - Parameters:
-    ///   - message: Descriptive message to log.
-    ///   - isCritical: Whether the event is critical. Defaults to `false`.
-    ///   - payload: Additional metadata for the event.
-    ///   - eventType: Optional high-level classification of the event.
-    ///   - eventAction: Optional action performed during the event.
-    ///   - includeSource: Whether to include source code location metadata. Defaults to `false`.
-    ///   - file: Source file path (automatically captured).
-    ///   - function: Function name (automatically captured).
-    ///   - line: Line number (automatically captured).
-    /// - Returns: Created ``LogEvent`` instance.
-    @discardableResult
-    public func analytics(
-        _ message: String,
-        isCritical: Bool = false,
-        payload: [String: String]? = nil,
-        eventType: (any EventTypeProtocol)? = nil,
-        eventAction: (any EventActionProtocol)? = nil,
-        includeSource: Bool = false,
-        file: String = #file,
-        function: String = #function,
-        line: Int = #line
-    ) -> LogEvent {
-        createLogEvent(
-            message,
-            type: .analytics,
-            isCritical: isCritical,
-            payload: combinePayload(
-                payload: payload,
-                eventType: eventType,
-                eventAction: eventAction,
-                includeSource: includeSource,
-                file: file,
-                function: function,
-                line: line
-            )
+            payload: payload,
+            correlationID: correlationID
         )
     }
 
@@ -325,27 +119,75 @@ public final class Letopis: @unchecked Sendable {
 
     // MARK: - Internal Methods
 
-    /// Creates a raw log event, forwards it to interceptors and returns the created event.
+    /// Creates a raw log event with severity and purpose, forwards it to interceptors and returns the created event.
     /// - Parameters:
     ///   - message: Descriptive message associated with the event.
-    ///   - type: Semantic type of the event.
+    ///   - severity: Severity level of the event.
+    ///   - purpose: Purpose of the event.
+    ///   - domain: Business domain or subsystem.
+    ///   - action: Specific action within the domain.
     ///   - isCritical: Whether the event is critical. Defaults to `false`.
     ///   - payload: Additional metadata that should accompany the event.
+    ///   - correlationID: Optional correlation ID for tracking related events.
     /// - Returns: Fully constructed ``LogEvent``.
     @discardableResult
     internal func createLogEvent(
         _ message: String,
-        type: LogEventType,
+        severity: LogSeverity,
+        purpose: LogPurpose = .operational,
+        domain: DomainProtocol,
+        action: ActionProtocol,
         isCritical: Bool = false,
-        payload: [String: String] = [:]
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
     ) -> LogEvent {
         let event = LogEvent(
-            type: type,
-            isCritical: isCritical,
+            severity: severity,
+            purpose: purpose,
+            domain: domain,
+            action: action,
             message: message,
-            payload: payload
+            payload: payload,
+            isCritical: isCritical,
+            correlationID: correlationID
         )
-        notifyInterceptors(with: event)
+        Task.detached(priority: .userInitiated) { await self.notifyInterceptors(with: event) }
+        return event
+    }
+
+    /// Creates a raw log event with severity and purpose using string domain and action.
+    /// - Parameters:
+    ///   - message: Descriptive message associated with the event.
+    ///   - severity: Severity level of the event.
+    ///   - purpose: Purpose of the event.
+    ///   - domain: Business domain or subsystem as a string.
+    ///   - action: Specific action within the domain as a string.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata that should accompany the event.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: Fully constructed ``LogEvent``.
+    @discardableResult
+    internal func createLogEvent(
+        _ message: String,
+        severity: LogSeverity,
+        purpose: LogPurpose = .operational,
+        domain: String,
+        action: String,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        let event = LogEvent(
+            severity: severity,
+            purpose: purpose,
+            domain: domain,
+            action: action,
+            message: message,
+            payload: payload,
+            isCritical: isCritical,
+            correlationID: correlationID
+        )
+        Task.detached(priority: .userInitiated) { await self.notifyInterceptors(with: event) }
         return event
     }
 
@@ -362,7 +204,7 @@ public final class Letopis: @unchecked Sendable {
     internal func combinePayload(
         payload: [String: String]?,
         eventType: (any EventTypeProtocol)?,
-        eventAction: (any EventActionProtocol)?,
+        eventAction: (any ActionProtocol)?,
         includeSource: Bool = false,
         file: String = "",
         function: String = "",
@@ -394,28 +236,26 @@ public final class Letopis: @unchecked Sendable {
 private extension Letopis {
     /// Iterates through the registered interceptors and forwards the provided event.
     /// - Parameter event: Event that should be delivered to interceptors.
-    func notifyInterceptors(with event: LogEvent) {
+    func notifyInterceptors(with event: LogEvent) async {
         guard healthTrackers.isEmpty == false else {
             print("⚠️ Letopis interceptors is empty!")
             return
         }
 
-        Task {
-            await withTaskGroup(of: Void.self) { group in
-                for tracker in healthTrackers {
-                    guard tracker.canHandleEvents else { continue }
+        await withTaskGroup(of: Void.self) { group in
+            for tracker in healthTrackers {
+                guard tracker.canHandleEvents else { continue }
 
-                    group.addTask {
-                        do {
-                            try await tracker.interceptor.handle(event)
-                            tracker.recordSuccess()
-                        } catch {
-                            tracker.recordFailure()
-                            #if DEBUG
-                            // Optionally log the failure
-                            print("⚠️  Interceptor failed to handle event: \(error)")
-                            #endif
-                        }
+                group.addTask {
+                    do {
+                        try await tracker.interceptor.handle(event)
+                        tracker.recordSuccess()
+                    } catch {
+                        tracker.recordFailure()
+                        #if DEBUG
+                        // Optionally log the failure
+                        print("⚠️  Interceptor failed to handle event: \(error)")
+                        #endif
                     }
                 }
             }
@@ -436,5 +276,368 @@ private extension Letopis {
                 }
             }
         }
+    }
+}
+
+// MARK: - Convenience Logging Methods
+
+public extension Letopis {
+    /// Logs a debug-level message.
+    /// - Parameters:
+    ///   - message: The message to log.
+    ///   - domain: Business domain or subsystem. Defaults to empty.
+    ///   - action: Specific action within the domain. Defaults to empty.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    func debug(
+        _ message: String,
+        domain: String = "",
+        action: String = "",
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return createLogEvent(
+            message,
+            severity: .debug,
+            purpose: purpose,
+            domain: domain.isEmpty ? DefaultDomain.empty.value : domain,
+            action: action.isEmpty ? DefaultAction.empty.value : action,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs an info-level message.
+    /// - Parameters:
+    ///   - message: The message to log.
+    ///   - domain: Business domain or subsystem. Defaults to empty.
+    ///   - action: Specific action within the domain. Defaults to empty.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    func info(
+        _ message: String,
+        domain: String = "",
+        action: String = "",
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return createLogEvent(
+            message,
+            severity: .info,
+            purpose: purpose,
+            domain: domain.isEmpty ? DefaultDomain.empty.value : domain,
+            action: action.isEmpty ? DefaultAction.empty.value : action,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs a notice-level message.
+    /// - Parameters:
+    ///   - message: The message to log.
+    ///   - domain: Business domain or subsystem. Defaults to empty.
+    ///   - action: Specific action within the domain. Defaults to empty.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    func notice(
+        _ message: String,
+        domain: String = "",
+        action: String = "",
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return createLogEvent(
+            message,
+            severity: .notice,
+            purpose: purpose,
+            domain: domain.isEmpty ? DefaultDomain.empty.value : domain,
+            action: action.isEmpty ? DefaultAction.empty.value : action,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs a warning-level message.
+    /// - Parameters:
+    ///   - message: The message to log.
+    ///   - domain: Business domain or subsystem. Defaults to empty.
+    ///   - action: Specific action within the domain. Defaults to empty.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    func warning(
+        _ message: String,
+        domain: String = "",
+        action: String = "",
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return createLogEvent(
+            message,
+            severity: .warning,
+            purpose: purpose,
+            domain: domain.isEmpty ? DefaultDomain.empty.value : domain,
+            action: action.isEmpty ? DefaultAction.empty.value : action,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs an error-level message.
+    /// - Parameters:
+    ///   - message: The message to log.
+    ///   - domain: Business domain or subsystem. Defaults to empty.
+    ///   - action: Specific action within the domain. Defaults to empty.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    func error(
+        _ message: String,
+        domain: String = "",
+        action: String = "",
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return createLogEvent(
+            message,
+            severity: .error,
+            purpose: purpose,
+            domain: domain.isEmpty ? DefaultDomain.empty.value : domain,
+            action: action.isEmpty ? DefaultAction.empty.value : action,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs an error from an Error instance.
+    /// - Parameters:
+    ///   - error: The error to log.
+    ///   - domain: Business domain or subsystem. Defaults to empty.
+    ///   - action: Specific action within the domain. Defaults to empty.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    func error(
+        _ error: Error,
+        domain: String = "",
+        action: String = "",
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return self.error(
+            error.localizedDescription,
+            domain: domain,
+            action: action,
+            purpose: purpose,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs a fault-level message.
+    /// - Parameters:
+    ///   - message: The message to log.
+    ///   - domain: Business domain or subsystem. Defaults to empty.
+    ///   - action: Specific action within the domain. Defaults to empty.
+    ///   - purpose: Purpose of the event. Defaults to `.operational`.
+    ///   - isCritical: Whether the event is critical. Defaults to `false`.
+    ///   - payload: Additional metadata. Defaults to empty dictionary.
+    ///   - correlationID: Optional correlation ID for tracking related events.
+    /// - Returns: The created ``LogEvent``.
+    @discardableResult
+    func fault(
+        _ message: String,
+        domain: String = "",
+        action: String = "",
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return createLogEvent(
+            message,
+            severity: .fault,
+            purpose: purpose,
+            domain: domain.isEmpty ? DefaultDomain.empty.value : domain,
+            action: action.isEmpty ? DefaultAction.empty.value : action,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+}
+
+// MARK: - Convenience Logging Methods with Protocol Support
+
+public extension Letopis {
+    /// Logs a debug-level message with protocol-based domain and action.
+    @discardableResult
+    func debug<D: DomainProtocol, A: ActionProtocol>(
+        _ message: String,
+        domain: D,
+        action: A,
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return self.debug(
+            message,
+            domain: domain.value,
+            action: action.value,
+            purpose: purpose,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs an info-level message with protocol-based domain and action.
+    @discardableResult
+    func info<D: DomainProtocol, A: ActionProtocol>(
+        _ message: String,
+        domain: D,
+        action: A,
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return self.info(
+            message,
+            domain: domain.value,
+            action: action.value,
+            purpose: purpose,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs a notice-level message with protocol-based domain and action.
+    @discardableResult
+    func notice<D: DomainProtocol, A: ActionProtocol>(
+        _ message: String,
+        domain: D,
+        action: A,
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return self.notice(
+            message,
+            domain: domain.value,
+            action: action.value,
+            purpose: purpose,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs a warning-level message with protocol-based domain and action.
+    @discardableResult
+    func warning<D: DomainProtocol, A: ActionProtocol>(
+        _ message: String,
+        domain: D,
+        action: A,
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return self.warning(
+            message,
+            domain: domain.value,
+            action: action.value,
+            purpose: purpose,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs an error-level message with protocol-based domain and action.
+    @discardableResult
+    func error<D: DomainProtocol, A: ActionProtocol>(
+        _ message: String,
+        domain: D,
+        action: A,
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return self.error(
+            message,
+            domain: domain.value,
+            action: action.value,
+            purpose: purpose,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
+    }
+
+    /// Logs a fault-level message with protocol-based domain and action.
+    @discardableResult
+    func fault<D: DomainProtocol, A: ActionProtocol>(
+        _ message: String,
+        domain: D,
+        action: A,
+        purpose: LogPurpose = .operational,
+        isCritical: Bool = false,
+        payload: [String: String] = [:],
+        correlationID: UUID? = nil
+    ) -> LogEvent {
+        return self.fault(
+            message,
+            domain: domain.value,
+            action: action.value,
+            purpose: purpose,
+            isCritical: isCritical,
+            payload: payload,
+            correlationID: correlationID
+        )
     }
 }

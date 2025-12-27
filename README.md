@@ -70,28 +70,25 @@ logger.log()
 ```swift
 import Letopis
 
-// Define event types (optional)
-enum AppEventType: String, EventTypeProtocol {
-    case userAction = "user_action"
-    case apiCall = "api_call"
-}
-
-enum UserAction: String, EventActionProtocol {
-    case screenOpen = "screen_open"
-    case buttonTap = "button_tap"
-}
-
 // Initialize logger
 let logger = Letopis(
     interceptors: [ConsoleInterceptor()]
 )
 
 // Recommended: Use fluent DSL for expressive, structured logging
+// Option 1: Use built-in domains and actions
 logger.log()
-    .event(AppEventType.userAction)
-    .action(UserAction.screenOpen)
+    .domain(UserDomain.ui)
+    .action(UserAction.click)
     .payload(["screen": "profile", "user_id": "123"])
     .info("User opened profile screen")
+
+// Option 2: Use custom string-based domain and action
+logger.log()
+    .domain("auth")
+    .action("login_success")
+    .payload(["user_id": "123"])
+    .info("User logged in successfully")
 
 // Alternative: Simple direct call for quick logging
 logger.info("User opened profile screen")
@@ -110,25 +107,27 @@ logger.info("User opened profile screen")
 The fluent builder pattern provides expressive, chainable syntax for rich logging:
 
 ```swift
-// Basic logging with event metadata
+// Basic logging with domain and action
 logger.log()
-    .event(.apiCall)
+    .domain(NetworkDomain.api)
+    .action(NetworkAction.start)
     .payload(["endpoint": "/users"])
     .info("API request started")
 
 // Critical error with full context
 logger.log()
-    .event(.apiCall)
+    .domain(NetworkDomain.network)
+    .action(NetworkAction.failure)
     .payload(["endpoint": "/users"])
     .critical()
     .error("Network request failed")
 
-// Analytics with structured data
+// Analytics with structured data using string-based domain/action
 logger.log()
-    .event("purchase")
+    .domain("purchase")
     .action("completed")
     .payload(["item_id": "12345", "price": "9.99"])
-    .analytics("Purchase completed")
+    .info("Purchase completed")
 
 // Debug with source location
 logger.log()
@@ -138,6 +137,12 @@ logger.log()
 // Automatically captures file, function, and line number
 
 // Sensitive data is masked by default (November 2025+)
+// Configure sensitive keys when creating logger
+let logger = Letopis(
+    interceptors: [ConsoleInterceptor()],
+    sensitiveKeys: ["password", "token", "api_key"]
+)
+
 logger.log()
     .payload(["password": "secret123", "username": "john"])
     .info("User logged in")

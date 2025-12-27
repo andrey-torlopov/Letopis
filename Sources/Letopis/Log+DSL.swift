@@ -5,50 +5,98 @@ import Foundation
 /// Optional DSL extension for Log that provides a fluent builder API.
 ///
 /// This extension is provided for users who prefer a more expressive, chainable syntax.
-/// For most use cases, the direct methods on `Letopis` (info, warning, error, etc.) are recommended.
+/// For most use cases, the direct methods like `.info()`, `.warning()`, `.error()` are recommended.
 ///
 /// Example usage:
 /// ```swift
 /// logger.log()
-///     .event("user_action")
-///     .action("button_tap")
-///     .payload(["screen": "home"])
+///     .domain("auth")
+///     .action("login_failed")
+///     .purpose(.operational)
+///     .payload(["reason": "invalid_credentials"])
 ///     .critical()
 ///     .sensitive(keys: ["user_id"])
-///     .info("User tapped button")
+///     .error("User login failed")
 /// ```
 public extension Log {
-    /// Sets the event type using a protocol-conforming type.
-    /// - Parameter type: Event type conforming to ``EventTypeProtocol``.
+    /// Sets the purpose of the log event.
+    /// - Parameter purpose: Purpose of the event.
     /// - Returns: Self for chaining.
     @discardableResult
-    func event<T: EventTypeProtocol>(_ type: T) -> Log {
-        setEventType(type.value)
+    func purpose(_ purpose: LogPurpose) -> Log {
+        self.purpose = purpose
+        return self
     }
 
-    /// Sets the event type using a string value.
-    /// - Parameter value: Event type as a string.
+    /// Sets the domain using a protocol-conforming type.
+    /// - Parameter domain: Domain conforming to ``DomainProtocol``.
     /// - Returns: Self for chaining.
     @discardableResult
-    func event(_ value: String) -> Log {
-        setEventType(value)
+    func domain<T: DomainProtocol>(_ domain: T) -> Log {
+        self.domain = domain.value
+        return self
     }
 
-    /// Sets the event action using a protocol-conforming type.
-    /// - Parameter action: Event action conforming to ``EventActionProtocol``.
+    /// Sets the domain using a string value.
+    /// - Parameter domain: Domain name (e.g., "auth", "payments", "network").
     /// - Returns: Self for chaining.
     @discardableResult
-    func action<T: EventActionProtocol>(_ action: T) -> Log {
-        setEventAction(action.value)
+    func domain(_ domain: String) -> Log {
+        self.domain = domain
+        return self
     }
 
-    /// Sets the event action using a string value.
-    /// - Parameter value: Event action as a string.
+    /// Sets the action using a protocol-conforming type.
+    /// - Parameter action: Action conforming to ``ActionProtocol``.
     /// - Returns: Self for chaining.
     @discardableResult
-    func action(_ value: String) -> Log {
-        setEventAction(value)
+    func action<T: ActionProtocol>(_ action: T) -> Log {
+        self.action = action.value
+        return self
     }
+
+    /// Sets the action using a string value.
+    /// - Parameter action: Action name (e.g., "login_failed", "payment_processed").
+    /// - Returns: Self for chaining.
+    @discardableResult
+    func action(_ action: String) -> Log {
+        self.action = action
+        return self
+    }
+
+    /// Sets the correlation ID for tracking related events.
+    /// - Parameter correlationID: UUID for correlation.
+    /// - Returns: Self for chaining.
+    @discardableResult
+    func correlationID(_ correlationID: UUID) -> Log {
+        self.correlationID = correlationID
+        return self
+    }
+
+    /// Sets the domain and action together using protocol-conforming types.
+    /// - Parameters:
+    ///   - domain: Domain conforming to ``DomainProtocol``.
+    ///   - action: Action conforming to ``ActionProtocol``.
+    /// - Returns: Self for chaining.
+    @discardableResult
+    func event<D: DomainProtocol, A: ActionProtocol>(domain: D, action: A) -> Log {
+        self.domain = domain.value
+        self.action = action.value
+        return self
+    }
+
+    /// Sets the domain and action together using string values.
+    /// - Parameters:
+    ///   - domain: Domain name.
+    ///   - action: Action name.
+    /// - Returns: Self for chaining.
+    @discardableResult
+    func event(domain: String, action: String) -> Log {
+        self.domain = domain
+        self.action = action
+        return self
+    }
+
 
     /// Adds or merges additional metadata to the log payload.
     /// - Parameter payload: Dictionary of key-value pairs to add to the payload.
@@ -132,33 +180,35 @@ public extension Letopis {
         Log(logger: self)
     }
 
-    /// Creates a Log builder and sets the event type using a protocol-conforming type.
-    /// - Parameter event: Event type conforming to ``EventTypeProtocol``.
-    /// - Returns: A ``Log`` builder with the event type set.
+
+
+    /// Creates a Log builder and sets the domain using a protocol-conforming type.
+    /// - Parameter domain: Domain conforming to ``DomainProtocol``.
+    /// - Returns: A ``Log`` builder with the domain set.
     @discardableResult
-    func event<T: EventTypeProtocol>(_ event: T) -> Log {
-        log().event(event)
+    func domain<T: DomainProtocol>(_ domain: T) -> Log {
+        log().domain(domain.value)
     }
 
-    /// Creates a Log builder and sets the event type using a string value.
-    /// - Parameter value: Event type as a string.
-    /// - Returns: A ``Log`` builder with the event type set.
+    /// Creates a Log builder and sets the domain using a string value.
+    /// - Parameter value: Domain as a string.
+    /// - Returns: A ``Log`` builder with the domain set.
     @discardableResult
-    func event(_ value: String) -> Log {
-        log().event(value)
+    func domain(_ value: String) -> Log {
+        log().domain(value)
     }
 
-    /// Creates a Log builder and sets the event action using a protocol-conforming type.
-    /// - Parameter action: Event action conforming to ``EventActionProtocol``.
-    /// - Returns: A ``Log`` builder with the event action set.
+    /// Creates a Log builder and sets the action using a protocol-conforming type.
+    /// - Parameter action: Event action conforming to ``ActionProtocol``.
+    /// - Returns: A ``Log`` builder with the action set.
     @discardableResult
-    func action<T: EventActionProtocol>(_ action: T) -> Log {
-        log().action(action)
+    func action<T: ActionProtocol>(_ action: T) -> Log {
+        log().action(action.value)
     }
 
-    /// Creates a Log builder and sets the event action using a string value.
-    /// - Parameter value: Event action as a string.
-    /// - Returns: A ``Log`` builder with the event action set.
+    /// Creates a Log builder and sets the action using a string value.
+    /// - Parameter value: Action as a string.
+    /// - Returns: A ``Log`` builder with the action set.
     @discardableResult
     func action(_ value: String) -> Log {
         log().action(value)

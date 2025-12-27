@@ -1,20 +1,25 @@
-/// Development and debugging event types for developer tooling.
-public enum DevelopmentEventType: String, EventTypeProtocol, Sendable {
+//
+//  DevelopmentDomain.swift
+//  Letopis
+//
+//  Created by Andrey Torlopov on 27.12.2025.
+//
+
+
+/// Development and debugging domains for developer tooling.
+public enum DevelopmentDomain: String, DomainProtocol, Sendable {
     /// General debug information
     case debug = "debug"
 
-    /// Performance measurement events
+    /// Performance measurement
     case performance = "performance"
 
-    /// Code execution trace events
+    /// Code execution trace
     case trace = "trace"
-
-    /// State inspection events
-    case inspection = "inspection"
 }
 
 /// Development action types for debugging and performance analysis.
-public enum DevelopmentAction: String, EventActionProtocol, Sendable {
+public enum DevelopmentAction: String, ActionProtocol, Sendable {
     /// Mark a checkpoint in code execution
     case checkpoint = "checkpoint"
 

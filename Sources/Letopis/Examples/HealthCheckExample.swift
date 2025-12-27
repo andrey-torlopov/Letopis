@@ -8,7 +8,10 @@ public class HealthCheckExample {
         print("🚀 Starting Health Check Example")
 
         // Create interceptors
-        let consoleInterceptor = ConsoleInterceptor()
+        let consoleInterceptor = ConsoleInterceptor(
+            severities: [.debug, .info, .notice, .warning, .error, .fault],
+            printer: { print($0) }
+        )
         let networkInterceptor = NetworkInterceptorExample(endpoint: "https://api.example.com/logs")
 
         // Create logger with interceptors
@@ -16,8 +19,8 @@ public class HealthCheckExample {
 
         // Log some initial events
         print("\n📝 Logging initial events...")
-        logger.info("Application started")
-        logger.warning("Memory usage high")
+        logger.log().domain("app").action("started").info("Application started")
+        logger.log().domain("system").action("memory_warning").warning("Memory usage high")
 
         // Check initial health status
         print("\n🏥 Initial health status:")
@@ -28,8 +31,8 @@ public class HealthCheckExample {
         networkInterceptor.simulateNetworkFailure(true)
 
         // Try logging with failed network
-        logger.error("Critical error occurred")
-        logger.info("User action completed")
+        logger.log().domain("app").action("error").critical().error("Critical error occurred")
+        logger.log().domain("user").action("completed").info("User action completed")
 
         // Check health status after failure
         print("\n🏥 Health status after network failure:")
@@ -41,7 +44,7 @@ public class HealthCheckExample {
 
         // Keep trying to log events (some may fail, some may succeed after recovery)
         for i in 1...5 {
-            logger.info("Test message \(i)")
+            logger.log().domain("test").action("message").info("Test message \(i)")
 
             // Trigger health checks periodically
             if i % 2 == 0 {

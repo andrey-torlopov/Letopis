@@ -70,28 +70,25 @@ logger.log()
 ```swift
 import Letopis
 
-// Определите типы событий (опционально)
-enum AppEventType: String, EventTypeProtocol {
-    case userAction = "user_action"
-    case apiCall = "api_call"
-}
-
-enum UserAction: String, EventActionProtocol {
-    case screenOpen = "screen_open"
-    case buttonTap = "button_tap"
-}
-
 // Инициализируйте логгер
 let logger = Letopis(
     interceptors: [ConsoleInterceptor()]
 )
 
 // Рекомендуется: Используйте fluent DSL для выразительного структурированного логирования
+// Вариант 1: Используйте встроенные домены и действия
 logger.log()
-    .event(AppEventType.userAction)
-    .action(UserAction.screenOpen)
+    .domain(UserDomain.ui)
+    .action(UserAction.click)
     .payload(["screen": "profile", "user_id": "123"])
     .info("Пользователь открыл экран профиля")
+
+// Вариант 2: Используйте строковые домены и действия
+logger.log()
+    .domain("auth")
+    .action("login_success")
+    .payload(["user_id": "123"])
+    .info("Пользователь вошел в систему")
 
 // Альтернатива: Простой прямой вызов для быстрого логирования
 logger.info("Пользователь открыл экран профиля")
@@ -110,25 +107,27 @@ logger.info("Пользователь открыл экран профиля")
 Fluent паттерн билдера обеспечивает выразительный цепочечный синтаксис для богатого логирования:
 
 ```swift
-// Базовое логирование с метаданными события
+// Базовое логирование с доменом и действием
 logger.log()
-    .event(.apiCall)
+    .domain(NetworkDomain.api)
+    .action(NetworkAction.start)
     .payload(["endpoint": "/users"])
     .info("Запрос API начат")
 
 // Критичная ошибка с полным контекстом
 logger.log()
-    .event(.apiCall)
+    .domain(NetworkDomain.network)
+    .action(NetworkAction.failure)
     .payload(["endpoint": "/users"])
     .critical()
     .error("Сетевой запрос не выполнен")
 
-// Аналитика со структурированными данными
+// Аналитика со структурированными данными используя строковые домены/действия
 logger.log()
-    .event("purchase")
+    .domain("purchase")
     .action("completed")
     .payload(["item_id": "12345", "price": "9.99"])
-    .analytics("Покупка завершена")
+    .info("Покупка завершена")
 
 // Отладка с местоположением в коде
 logger.log()
@@ -138,6 +137,12 @@ logger.log()
 // Автоматически захватывает файл, функцию и номер строки
 
 // Чувствительные данные маскируются по умолчанию (с ноября 2025)
+// Настройте чувствительные ключи при создании логгера
+let logger = Letopis(
+    interceptors: [ConsoleInterceptor()],
+    sensitiveKeys: ["password", "token", "api_key"]
+)
+
 logger.log()
     .payload(["password": "secret123", "username": "john"])
     .info("Пользователь вошел в систему")

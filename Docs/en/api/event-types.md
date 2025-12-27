@@ -1,24 +1,22 @@
-# Event Types & Actions
+# Domains & Actions
 
-# Event Types and Actions
+Letopis uses a **domain + action** model to structure log events. Domains represent business areas or subsystems, while actions describe specific operations within those domains.
 
-## Built-in Default Types
+## Built-in Domains and Actions
 
-Letopis provides a set of ready-to-use event types and actions for common scenarios:
+Letopis provides ready-to-use domains and actions for common scenarios:
 
-### UserEvents - User Interactions
+### UserDomain - User Interactions
 
 ```swift
-public enum UserEvents: String, EventTypeProtocol, Sendable {
-    case tap = "user_tap"
-    case swipe = "user_swipe"
+public enum UserDomain: String, DomainProtocol, Sendable {
+    case ui = "ui"
     case input = "user_input"
     case navigation = "user_navigation"
-    case form = "user_form"
     case gesture = "user_gesture"
 }
 
-public enum UserAction: String, EventActionProtocol, Sendable {
+public enum UserAction: String, ActionProtocol, Sendable {
     case click, longPress, doubleClick, scroll
     case typeText, submit
     case swipeLeft, swipeRight, swipeUp, swipeDown
@@ -26,108 +24,133 @@ public enum UserAction: String, EventActionProtocol, Sendable {
 }
 ```
 
-### NetworkEvents - Network Operations
+### NetworkDomain - Network Operations
 
 ```swift
-public enum NetworkEvents: String, EventTypeProtocol, Sendable {
-    case http = "http_request"
-    case websocket = "websocket"
-    case graphql = "graphql"
-    case grpc = "grpc"
+public enum NetworkDomain: String, DomainProtocol, Sendable {
+    case network = "network"
     case api = "api"
+    case websocket = "websocket"
 }
 
-public enum NetworkAction: String, EventActionProtocol, Sendable {
+public enum NetworkAction: String, ActionProtocol, Sendable {
     case start, success, failure, retry, cancel, timeout
     case connected, disconnected
     case dataReceived, dataSent
 }
 ```
 
-### ErrorEvents - Error Handling
+### ErrorDomain - Error Handling
 
 ```swift
-public enum ErrorEvents: String, EventTypeProtocol, Sendable {
-    case validation = "validation_error"
-    case network = "network_error"
-    case parsing = "parsing_error"
-    case business = "business_error"
-    case system = "system_error"
-    case auth = "auth_error"
-    case database = "database_error"
-    case fileSystem = "file_system_error"
+public enum ErrorDomain: String, DomainProtocol, Sendable {
+    case validation = "validation"
+    case network = "network"
+    case parsing = "parsing"
+    case business = "business"
+    case system = "system"
+    case auth = "auth"
+    case database = "database"
 }
 
-public enum ErrorAction: String, EventActionProtocol, Sendable {
+public enum ErrorAction: String, ActionProtocol, Sendable {
     case occurred, recovered, retrying, fatal
     case ignored, logged, handledByUser
 }
 ```
 
-### Using Default Types
+### LifecycleDomain - Lifecycle Events
+
+```swift
+public enum LifecycleDomain: String, DomainProtocol, Sendable {
+    case screen = "screen"
+    case app = "app"
+    case component = "component"
+    case session = "session"
+}
+
+public enum LifecycleAction: String, ActionProtocol, Sendable {
+    case willAppear, didAppear
+    case willDisappear, didDisappear
+    case willLoad, didLoad
+    case willDestroy, didDestroy
+}
+```
+
+### Using Built-in Domains
 
 ```swift
 // Logging user action
-logger
-    .event(UserEvents.tap)
+logger.log()
+    .domain(UserDomain.ui)
     .action(UserAction.click)
     .payload(["button": "submit"])
     .info("User clicked button")
 
 // Logging network request
-logger
-    .event(NetworkEvents.http)
+logger.log()
+    .domain(NetworkDomain.api)
     .action(NetworkAction.success)
     .payload(["endpoint": "/api/users"])
     .info("Request successful")
 
 // Logging error
-logger
-    .event(ErrorEvents.network)
+logger.log()
+    .domain(ErrorDomain.network)
     .action(ErrorAction.retrying)
     .critical()
     .error("Connection error")
+
+// Logging lifecycle event
+logger.log()
+    .domain(LifecycleDomain.screen)
+    .action(LifecycleAction.didAppear)
+    .payload(["screen_name": "profile"])
+    .info("Screen appeared")
 ```
 
-## Custom Event Types
+## Custom Domains and Actions
 
-You can create your own event types by conforming to the protocols:
+You can create your own domains and actions by conforming to the protocols:
 
 ```swift
-enum CustomEventType: String, EventTypeProtocol {
-    case authentication = "auth"
-    case dataSync = "data_sync"
-    case featureFlag = "feature_flag"
+// Define custom domain
+enum PaymentDomain: String, DomainProtocol {
+    case payment = "payment"
+    case subscription = "subscription"
+    case billing = "billing"
 }
 
-enum CustomAction: String, EventActionProtocol {
-    case enable = "enable"
-    case disable = "disable"
-    case refresh = "refresh"
+// Define custom actions
+enum PaymentAction: String, ActionProtocol {
+    case initiated = "initiated"
+    case processing = "processing"
+    case completed = "completed"
+    case failed = "failed"
+    case refunded = "refunded"
 }
 ```
 
-## Using Custom Types
+## Using Custom Domains and Actions
 
 ```swift
-logger
-    .event(CustomEventType.authentication)
-    .action(CustomAction.enable)
-    .info("Two-factor authentication enabled")
+logger.log()
+    .domain(PaymentDomain.payment)
+    .action(PaymentAction.completed)
+    .payload(["amount": "99.99", "currency": "USD"])
+    .info("Payment completed successfully")
 ```
 
-## Example: Screen Actions
+## String-based Domains and Actions
+
+For quick prototyping or simple cases, you can use strings directly:
 
 ```swift
-public enum ScreenAction: String, EventActionProtocol, Sendable {
-    case open
-    case close
-}
-
-public enum AppEventType: String, EventTypeProtocol, Sendable {
-    case uiAction = "ui_action"
-    case businessLogic = "business_logic"
-}
+logger.log()
+    .domain("auth")
+    .action("login_success")
+    .payload(["user_id": "12345"])
+    .info("User logged in")
 ```
 
 ## Best Practices
