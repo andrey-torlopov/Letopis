@@ -32,7 +32,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     private let printer: Printer
     private let logger: Logger?
     private let subsystem: String?
-    private let useDomainAsCategory: Bool
+    private let defaultCategory: String?
 
     /// Creates a console interceptor with severity-based filtering.
     /// - Parameters:
@@ -43,8 +43,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
     ///   - actions: Accepted event actions.
     ///   - sourceFiles: Accepted source file names from payload metadata.
     ///   - subsystem: OSLog subsystem identifier. If provided, OSLog is used instead of print. If nil, falls back to print. Defaults to `nil`.
-    ///   - useDomainAsCategory: If true and subsystem is provided, uses event.domain as OSLog category. Defaults to `true`.
-    ///   - defaultCategory: Default OSLog category when useDomainAsCategory is false and subsystem is provided. Defaults to "Letopis".
+    ///   - defaultCategory: Default OSLog category when subsystem is provided. If nil, uses event.domain as category. Defaults to `nil`.
     ///   - printer: Closure that outputs a formatted message. Defaults to ``Swift/print(_:)``. Ignored when subsystem is provided.
     public init(
         severities: [LogSeverity]? = nil,
@@ -54,8 +53,7 @@ public final class ConsoleInterceptor: LetopisInterceptor {
         actions: [String]? = nil,
         sourceFiles: [String]? = nil,
         subsystem: String? = nil,
-        useDomainAsCategory: Bool = true,
-        defaultCategory: String = "Letopis",
+        defaultCategory: String? = nil,
         printer: @escaping Printer = { Swift.print($0) }
     ) {
         self.logTypes = nil
@@ -66,11 +64,11 @@ public final class ConsoleInterceptor: LetopisInterceptor {
         self.actions = ConsoleInterceptor.normalize(actions)
         self.sourceFiles = ConsoleInterceptor.normalize(sourceFiles)
         self.subsystem = subsystem
-        self.useDomainAsCategory = useDomainAsCategory
+        self.defaultCategory = defaultCategory
         self.printer = printer
 
-        // For non-domain-based category, create logger upfront when subsystem is provided
-        if !useDomainAsCategory, let subsystem = subsystem {
+        // Create logger upfront when subsystem and defaultCategory are both provided
+        if let subsystem = subsystem, let defaultCategory = defaultCategory {
             self.logger = Logger(subsystem: subsystem, category: defaultCategory)
         } else {
             self.logger = nil
@@ -98,9 +96,9 @@ public final class ConsoleInterceptor: LetopisInterceptor {
 
     /// Logs an event using OSLog with appropriate subsystem and category.
     ///
-    /// The category is determined by `useDomainAsCategory`:
-    /// - If `true`: uses `event.domain` as category (e.g., "auth", "network", "ui")
-    /// - If `false`: uses the default category specified in init
+    /// The category is determined by `defaultCategory`:
+    /// - If `defaultCategory` is `nil`: uses `event.domain` as category (e.g., "auth", "network", "ui")
+    /// - If `defaultCategory` is provided: uses the specified default category
     ///
     /// Using domain as category allows filtering logs by business area in Console.app:
     /// - `subsystem:com.app category:auth` - all authentication logs
@@ -120,16 +118,13 @@ public final class ConsoleInterceptor: LetopisInterceptor {
 
         // Determine the logger to use based on configuration
         let effectiveLogger: Logger
-        if useDomainAsCategory {
-            // Create a logger with domain as category for better log organization
-            // This allows filtering by business domain in Console.app
-            effectiveLogger = Logger(subsystem: subsystem, category: event.domain)
-        } else if let logger = logger {
+        if let logger = logger {
             // Use pre-created logger with default category
             effectiveLogger = logger
         } else {
-            // Shouldn't happen, but fallback to default category
-            effectiveLogger = Logger(subsystem: subsystem, category: "Letopis")
+            // Use domain as category for better log organization
+            // This allows filtering by business domain in Console.app
+            effectiveLogger = Logger(subsystem: subsystem, category: event.domain)
         }
 
         let osLogLevel = event.severity.osLogType
