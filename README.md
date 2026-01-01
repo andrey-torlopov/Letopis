@@ -63,6 +63,7 @@ logger.info("User opened profile screen")
 
 - 📦 [Installation](Docs/en/installation.md)
 - 🚀 [Quick Start](Docs/en/quick-start.md)
+- 💬 [LogMessage - Simple API](Docs/en/log-message.md) — Alternative simple logging approach
 - 📖 [Full Documentation](Docs/en/index.md)
 - 📝 [Changelog](CHANGELOG.md)
 
