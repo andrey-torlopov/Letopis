@@ -36,6 +36,9 @@ public enum CommonDomain: String, DomainProtocol, Sendable {
     /// Caching mechanisms
     case cache = "cache"
 
+    /// Persistent storage operations
+    case storage = "storage"
+
     // MARK: - User & Auth
 
     /// Authentication and authorization
@@ -198,11 +201,20 @@ public enum CommonAction: String, ActionProtocol, Sendable {
     /// Data cached
     case cached = "cached"
 
+    /// Data saved to storage
+    case saved = "saved"
+
     /// Data synced
     case synced = "synced"
 
     /// Data transformed
     case transformed = "transformed"
+
+    /// Storage cleared
+    case cleared = "cleared"
+
+    /// Storage migrated
+    case migrated = "migrated"
 
     // MARK: - Error Handling
 
