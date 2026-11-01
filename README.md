@@ -150,3 +150,7 @@ Letopis includes optional helper utilities that simplify common logging patterns
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## ☕ Buy me a coffee
+
+If you find this project useful, you can [support my work on Boosty](https://boosty.to/andreytorlopov).
